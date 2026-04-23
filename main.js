@@ -53,6 +53,13 @@ class EnergyCompare extends utils.Adapter {
 		});
 	}
 
+	/**
+	 * @param {string} id
+	 * @param {string} name
+	 * @param {any} value
+	 * @param {string} [role]
+	 * @param {ioBroker.CommonType} [type]
+	 */
 	async writeStateObject(id, name, value, role = 'value.power.consumption', type = 'number') {
 		await this.setObjectNotExistsAsync(id, {
 			type: 'state',
