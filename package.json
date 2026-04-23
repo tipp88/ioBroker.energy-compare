@@ -2,12 +2,9 @@
   "name": "iobroker.energy-compare",
   "version": "0.1.0",
   "description": "Compare daily energy consumption between Octopus Energy and Inexogy",
-  "author": {
-    "name": "User",
-    "email": "user@example.com"
-  },
+  "author": "tipp88",
   "contributors": [],
-  "homepage": "https://github.com/User/ioBroker.energy-compare",
+  "homepage": "https://github.com/tipp88/ioBroker.energy-compare",
   "license": "MIT",
   "keywords": [
     "octopus",
@@ -16,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/User/ioBroker.energy-compare.git"
+    "url": "https://github.com/tipp88/ioBroker.energy-compare.git"
   },
   "engines": {
     "node": ">= 20"
@@ -62,7 +59,7 @@
     "dev-server": "dev-server"
   },
   "bugs": {
-    "url": "https://github.com/User/ioBroker.energy-compare/issues"
+    "url": "https://github.com/tipp88/ioBroker.energy-compare/issues"
   },
   "readmeFilename": "README.md"
 }

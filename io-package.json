@@ -48,7 +48,7 @@
 			"zh-cn": "比较 Octopus Energy 和 Inexogy 的每日消耗量"
 		},
 		"authors": [
-			"User <user@example.com>"
+			"tipp88"
 		],
 		"keywords": [
 			"octopus",
@@ -62,8 +62,8 @@
 		"platform": "Javascript/Node.js",
 		"icon": "energy-compare.png",
 		"enabled": true,
-		"extIcon": "https://raw.githubusercontent.com/User/ioBroker.energy-compare/main/admin/energy-compare.png",
-		"readme": "https://github.com/User/ioBroker.energy-compare/blob/main/README.md",
+		"extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.energy-compare/main/admin/energy-compare.png",
+		"readme": "https://github.com/tipp88/ioBroker.energy-compare/blob/main/README.md",
 		"loglevel": "info",
 		"tier": 3,
 		"mode": "daemon",
