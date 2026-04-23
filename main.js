@@ -284,9 +284,9 @@ class EnergyCompare extends utils.Adapter {
 					account(accountNumber: $accountNumber) {
 						property(id: $propertyId) {
 							measurements(
-								utilityFilters: {electricityFilters: {readingFrequencyType: ${split ? 'HALF_HOURLY' : 'DAY_INTERVAL'}, readingQuality: ACTUAL}}
+								utilityFilters: {electricityFilters: {readingFrequencyType: ${split ? 'RAW_INTERVAL' : 'DAY_INTERVAL'}, readingQuality: ACTUAL}}
 								startOn: $date
-								first: ${split ? 100 : 1}
+								first: ${split ? 150 : 1}
 							) {
 								edges {
 									node {
