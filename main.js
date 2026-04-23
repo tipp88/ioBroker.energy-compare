@@ -182,7 +182,13 @@ class EnergyCompare extends utils.Adapter {
 					'Content-Type': 'application/json',
 					Authorization: token,
 				},
+				validateStatus: () => true,
 			});
+			
+			if (dataRes.status !== 200) {
+				this.log.error(`Octopus consumption fetch failed with status ${dataRes.status}: ${JSON.stringify(dataRes.data)}`);
+				return null;
+			}
 
 			// 3. Extract and Sum Data
 			let total = 0;
@@ -244,19 +250,23 @@ class EnergyCompare extends utils.Adapter {
 				validateStatus: () => true,
 			});
 
-			if (dataRes.status === 200 && dataRes.data && dataRes.data.length > 0) {
-				// Typical Discovergy API returns energy/energyOut (either in WH or 10^-7 kWh)
-				// Assuming standard energy in Wh (Watt-hours)
-				let energyWh = dataRes.data[0].values?.energy || 0;
-				let kwh = energyWh / 10000000000; // discovergy sends often in 10^-7 kWh multipliers
+			if (dataRes.status === 200 && dataRes.data && dataRes.data.length > 1) {
+				// To get the consumption, diff the start time reading and end time reading.
+				let firstWh = dataRes.data[0].values?.energy || 0;
+				let lastWh = dataRes.data[dataRes.data.length - 1].values?.energy || 0;
+				let diffWh = Math.abs(lastWh - firstWh);
 
+				let kwh = diffWh / 10000000000; // discovergy sends often in 10^-7 kWh multipliers
 				// Fallback sanity check if it's straight Wh
-				if (energyWh > 0 && energyWh < 100000) {
-					kwh = energyWh / 1000;
+				if (diffWh > 0 && diffWh < 100000) {
+					kwh = diffWh / 1000;
 				}
 
-				this.log.debug(`Inexogy daily consumption calculated: ${kwh} kWh`);
+				this.log.debug(`Inexogy daily consumption calculated from diff: ${kwh} kWh`);
 				return kwh;
+			} else if (dataRes.status === 200 && dataRes.data && dataRes.data.length <= 1) {
+				this.log.warn('Inexogy data only has 1 reading for the period. Cannot calculate a consumption difference.');
+				return null;
 			}
 			// If BasicAuth fails, log error and try OAuth hint if necessary
 			if (dataRes.status === 401 || dataRes.status === 403) {
