@@ -62,6 +62,7 @@ class EnergyCompare extends utils.Adapter {
 		];
 
 		for (const s of states) {
+			// @ts-expect-error TS does not correctly infer string as CommonType in this loop
 			await this.setObjectNotExistsAsync(s.id, {
 				type: 'state',
 				common: {
