@@ -241,8 +241,8 @@ class EnergyCompare extends utils.Adapter {
 			const meterId = meterRes.data[0].meterId;
 			this.log.debug(`Found Inexogy meterId: ${meterId}`);
 
-			// 2. Fetch readings using the meterId
-			const url = `https://api.inexogy.com/public/v1/readings?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}&resolution=one_day`;
+			// 2. Fetch statistics using the meterId
+			const url = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}`;
 			this.log.debug(`Fetching: ${url}`);
 
 			const dataRes = await axios.get(url, {
@@ -250,11 +250,11 @@ class EnergyCompare extends utils.Adapter {
 				validateStatus: () => true,
 			});
 
-			if (dataRes.status === 200 && dataRes.data && dataRes.data.length > 1) {
-				// To get the consumption, diff the start time reading and end time reading.
-				let firstWh = dataRes.data[0].values?.energy || 0;
-				let lastWh = dataRes.data[dataRes.data.length - 1].values?.energy || 0;
-				let diffWh = Math.abs(lastWh - firstWh);
+			if (dataRes.status === 200 && dataRes.data && dataRes.data.energy) {
+				const energyData = dataRes.data.energy;
+				const min = energyData.minimum || 0;
+				const max = energyData.maximum || 0;
+				const diffWh = Math.abs(max - min);
 
 				let kwh = diffWh / 10000000000; // discovergy sends often in 10^-7 kWh multipliers
 				// Fallback sanity check if it's straight Wh
@@ -262,10 +262,10 @@ class EnergyCompare extends utils.Adapter {
 					kwh = diffWh / 1000;
 				}
 
-				this.log.debug(`Inexogy daily consumption calculated from diff: ${kwh} kWh`);
+				this.log.debug(`Inexogy daily consumption calculated from statistics: ${kwh} kWh`);
 				return kwh;
-			} else if (dataRes.status === 200 && dataRes.data && dataRes.data.length <= 1) {
-				this.log.warn('Inexogy data only has 1 reading for the period. Cannot calculate a consumption difference.');
+			} else if (dataRes.status === 200) {
+				this.log.warn('Inexogy statistics did not contain energy data.');
 				return null;
 			}
 			// If BasicAuth fails, log error and try OAuth hint if necessary
