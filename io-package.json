@@ -97,7 +97,9 @@
 		"inexogyEmail": "",
 		"inexogyPassword": "",
 		"discrepancyThreshold": 0.1,
-		"cronSchedule": "0 2 * * *"
+		"cronSchedule": "0 2 * * *",
+		"splitGoTariff": false,
+		"syncDays": 30
 	},
 	"objects": [],
 	"instanceObjects": []

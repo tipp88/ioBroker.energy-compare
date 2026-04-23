@@ -89,6 +89,22 @@
 					"newLine": false,
 					"sm": 12,
 					"md": 6
+				},
+				"splitGoTariff": {
+					"type": "checkbox",
+					"label": "Split into 'Go' (0-5h) and Standard Tariff windows",
+					"newLine": true,
+					"sm": 12,
+					"md": 6
+				},
+				"syncDays": {
+					"type": "number",
+					"label": "Historical Sync Days (Default: 30)",
+					"min": 1,
+					"max": 365,
+					"newLine": false,
+					"sm": 12,
+					"md": 6
 				}
 			}
 		}

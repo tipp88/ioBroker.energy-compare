@@ -17,15 +17,17 @@ class EnergyCompare extends utils.Adapter {
 		// Create Object Tree
 		await this.setupObjects();
 
+		this.hasOctopus = !!(this.config.octopusEmail && this.config.octopusPassword);
+		this.hasInexogy = !!(this.config.inexogyEmail && this.config.inexogyPassword);
+
 		// Validate config
-		if (!this.config.octopusEmail || !this.config.octopusPassword) {
-			this.log.warn('Octopus credentials missing. Please configure them in the adapter settings.');
+		if (!this.hasOctopus) {
+			this.log.warn('Octopus credentials missing. Adapter requires at least Octopus credentials.');
 			return; // Wait for config
 		}
 
-		if (!this.config.inexogyEmail || !this.config.inexogyPassword) {
-			this.log.warn('Inexogy credentials missing. Please configure them in the adapter settings.');
-			return; // Wait for config
+		if (!this.hasInexogy) {
+			this.log.info('Inexogy credentials missing. Adapter will run in standalone mode (Octopus only).');
 		}
 
 		const schedule = this.config.cronSchedule || '0 2 * * *';
@@ -51,11 +53,28 @@ class EnergyCompare extends utils.Adapter {
 		});
 	}
 
+	async writeStateObject(id, name, value, role = 'value.power.consumption', type = 'number') {
+		await this.setObjectNotExistsAsync(id, {
+			type: 'state',
+			common: {
+				name: name,
+				type: type,
+				role: role,
+				unit: role.includes('power') || name.includes('Difference') ? 'kWh' : '',
+				read: true,
+				write: false,
+			},
+			native: {},
+		});
+		await this.setStateAsync(id, { val: value, ack: true });
+	}
+
 	async syncData() {
-		this.log.info('Starting 30-day retroactive data sync for Octopus and Inexogy...');
+		const syncDays = Number(this.config.syncDays) || 30;
+		this.log.info(`Starting ${syncDays}-day retroactive data sync...`);
 
 		try {
-			for (let i = 30; i >= 1; i--) {
+			for (let i = syncDays; i >= 1; i--) {
 				const targetDate = new Date();
 				targetDate.setDate(targetDate.getDate() - i);
 				targetDate.setHours(0, 0, 0, 0);
@@ -68,8 +87,26 @@ class EnergyCompare extends utils.Adapter {
 				const basePath = `history.${dateStr}`;
 
 				// Cache Check: Determine if the sync for this day has already been completed successfully
-				const diffState = await this.getStateAsync(`${basePath}.comparison.difference`);
-				if (diffState && diffState.val !== null && diffState.val !== undefined) {
+				let isCached = false;
+				if (this.hasInexogy) {
+					if (this.config.splitGoTariff) {
+						const diffState = await this.getStateAsync(`${basePath}.comparison.standardDifference`);
+						isCached = !!(diffState && diffState.val !== null && diffState.val !== undefined);
+					} else {
+						const diffState = await this.getStateAsync(`${basePath}.comparison.difference`);
+						isCached = !!(diffState && diffState.val !== null && diffState.val !== undefined);
+					}
+				} else {
+					if (this.config.splitGoTariff) {
+						const octState = await this.getStateAsync(`${basePath}.octopus.standardConsumption`);
+						isCached = !!(octState && octState.val !== null && octState.val !== undefined);
+					} else {
+						const octState = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
+						isCached = !!(octState && octState.val !== null && octState.val !== undefined);
+					}
+				}
+
+				if (isCached) {
 					this.log.debug(`Skipping ${dateStr}, data already synced and cached.`);
 					continue;
 				}
@@ -84,91 +121,76 @@ class EnergyCompare extends utils.Adapter {
 				});
 
 				// Fetch data for the specific day
-				const octopusVal = await this.fetchOctopus(targetDate, endDate);
-				const inexogyVal = await this.fetchInexogy(targetDate, endDate);
+				const octopusData = await this.fetchOctopus(targetDate, endDate, this.config.splitGoTariff);
+				let inexogyData = null;
+				if (this.hasInexogy) {
+					inexogyData = await this.fetchInexogy(targetDate, endDate, this.config.splitGoTariff);
+				}
 
-				// If we failed to get data for both providers, skip state writing and retry next cron
-				if (octopusVal === null || inexogyVal === null) {
-					this.log.warn(`Skipping ${dateStr} comparison due to missing provider data.`);
+				// Check data fetching success
+				if (octopusData === null || (this.hasInexogy && inexogyData === null)) {
+					this.log.warn(`Skipping ${dateStr} due to missing provider data.`);
 					continue;
 				}
 
-				// Write Octopus Data
-				await this.setObjectNotExistsAsync(`${basePath}.octopus.dailyConsumption`, {
-					type: 'state',
-					common: {
-						name: 'Octopus Daily Consumption',
-						type: 'number',
-						role: 'value.power.consumption',
-						unit: 'kWh',
-						read: true,
-						write: false,
-					},
-					native: {},
-				});
-				await this.setStateAsync(`${basePath}.octopus.dailyConsumption`, { val: octopusVal, ack: true });
-
-				// Write Inexogy Data
-				await this.setObjectNotExistsAsync(`${basePath}.inexogy.dailyConsumption`, {
-					type: 'state',
-					common: {
-						name: 'Inexogy Daily Consumption',
-						type: 'number',
-						role: 'value.power.consumption',
-						unit: 'kWh',
-						read: true,
-						write: false,
-					},
-					native: {},
-				});
-				await this.setStateAsync(`${basePath}.inexogy.dailyConsumption`, { val: inexogyVal, ack: true });
-
-				// Compare Data
-				const diff = Math.abs(octopusVal - inexogyVal);
 				const threshold = Number(this.config.discrepancyThreshold) || 0.1;
-				const hasDiscrepancy = diff >= threshold;
 
-				await this.setObjectNotExistsAsync(`${basePath}.comparison.difference`, {
-					type: 'state',
-					common: {
-						name: 'Absolute Difference',
-						type: 'number',
-						role: 'value',
-						unit: 'kWh',
-						read: true,
-						write: false,
-					},
-					native: {},
-				});
-				await this.setStateAsync(`${basePath}.comparison.difference`, {
-					val: parseFloat(diff.toFixed(3)),
-					ack: true,
-				});
+				if (this.config.splitGoTariff) {
+					// Split Write
+					await this.writeStateObject(`${basePath}.octopus.goConsumption`, 'Octopus Go Consumption', octopusData.go);
+					await this.writeStateObject(`${basePath}.octopus.standardConsumption`, 'Octopus Standard Consumption', octopusData.standard);
 
-				await this.setObjectNotExistsAsync(`${basePath}.comparison.hasDiscrepancy`, {
-					type: 'state',
-					common: { name: 'Has Discrepancy', type: 'boolean', role: 'indicator', read: true, write: false },
-					native: {},
-				});
-				await this.setStateAsync(`${basePath}.comparison.hasDiscrepancy`, { val: hasDiscrepancy, ack: true });
+					if (this.hasInexogy) {
+						await this.writeStateObject(`${basePath}.inexogy.goConsumption`, 'Inexogy Go Consumption', inexogyData.go);
+						await this.writeStateObject(`${basePath}.inexogy.standardConsumption`, 'Inexogy Standard Consumption', inexogyData.standard);
 
-				// Log Result
-				if (hasDiscrepancy) {
-					this.log.warn(
-						`Discrepancy detected for ${dateStr}! Octopus: ${octopusVal} kWh, Inexogy: ${inexogyVal} kWh. Diff: ${diff.toFixed(3)} kWh`,
-					);
+						const goDiff = Math.abs(octopusData.go - inexogyData.go);
+						const stdDiff = Math.abs(octopusData.standard - inexogyData.standard);
+
+						await this.writeStateObject(`${basePath}.comparison.goDifference`, 'Go Absolute Difference', parseFloat(goDiff.toFixed(3)), 'value');
+						await this.writeStateObject(`${basePath}.comparison.standardDifference`, 'Standard Absolute Difference', parseFloat(stdDiff.toFixed(3)), 'value');
+
+						if (goDiff >= threshold || stdDiff >= threshold) {
+							this.log.warn(`Discrepancy detected for ${dateStr}! Go Diff: ${goDiff.toFixed(3)} kWh, Std Diff: ${stdDiff.toFixed(3)} kWh`);
+						} else {
+							this.log.info(`Sync for ${dateStr} successful. Go Diff: ${goDiff.toFixed(3)}, Std Diff: ${stdDiff.toFixed(3)}`);
+						}
+					} else {
+						this.log.info(`Sync for ${dateStr} successful (Octopus Only, Split). Go: ${octopusData.go}, Std: ${octopusData.standard}`);
+					}
 				} else {
-					this.log.info(`Sync for ${dateStr} successful. No discrepancy. Diff: ${diff.toFixed(3)} kWh`);
+					// Normal Write
+					await this.writeStateObject(`${basePath}.octopus.dailyConsumption`, 'Octopus Daily Consumption', octopusData.total);
+
+					if (this.hasInexogy) {
+						await this.writeStateObject(`${basePath}.inexogy.dailyConsumption`, 'Inexogy Daily Consumption', inexogyData.total);
+
+						const diff = Math.abs(octopusData.total - inexogyData.total);
+						const hasDiscrepancy = diff >= threshold;
+
+						await this.writeStateObject(`${basePath}.comparison.difference`, 'Absolute Difference', parseFloat(diff.toFixed(3)), 'value');
+						await this.writeStateObject(`${basePath}.comparison.hasDiscrepancy`, 'Has Discrepancy', hasDiscrepancy, 'indicator', 'boolean');
+
+						if (hasDiscrepancy) {
+							this.log.warn(
+								`Discrepancy detected for ${dateStr}! Octopus: ${octopusData.total} kWh, Inexogy: ${inexogyData.total} kWh. Diff: ${diff.toFixed(3)} kWh`,
+							);
+						} else {
+							this.log.info(`Sync for ${dateStr} successful. No discrepancy. Diff: ${diff.toFixed(3)} kWh`);
+						}
+					} else {
+						this.log.info(`Sync for ${dateStr} successful (Octopus Only): ${octopusData.total} kWh`);
+					}
 				}
 			}
 
-			this.log.info('30-day sync cycle completed successfully.');
+			this.log.info(`${syncDays}-day sync cycle completed successfully.`);
 		} catch (error) {
 			this.log.error(`Error during syncData: ${error.message}`);
 		}
 	}
 
-	async fetchOctopus(start, _end) {
+	async fetchOctopus(start, _end, split) {
 		try {
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 
@@ -255,9 +277,9 @@ class EnergyCompare extends utils.Adapter {
 					account(accountNumber: $accountNumber) {
 						property(id: $propertyId) {
 							measurements(
-								utilityFilters: {electricityFilters: {readingFrequencyType: DAY_INTERVAL, readingQuality: ACTUAL}}
+								utilityFilters: {electricityFilters: {readingFrequencyType: ${split ? 'HALF_HOURLY' : 'DAY_INTERVAL'}, readingQuality: ACTUAL}}
 								startOn: $date
-								first: 1
+								first: ${split ? 100 : 1}
 							) {
 								edges {
 									node {
@@ -295,14 +317,30 @@ class EnergyCompare extends utils.Adapter {
 
 			// 4. Extract Data
 			let total = 0;
+			let go = 0;
+			let standard = 0;
 			const edges = dataRes.data?.data?.account?.property?.measurements?.edges;
 
 			if (edges && Array.isArray(edges) && edges.length > 0) {
 				for (const edge of edges) {
-					total += parseFloat(edge.node?.value || 0);
+					const nodeVal = parseFloat(edge.node?.value || 0);
+					total += nodeVal;
+
+					if (split) {
+						const startDt = new Date(edge.node.startAt);
+						if (startDt.getHours() < 5) {
+							go += nodeVal;
+						} else {
+							standard += nodeVal;
+						}
+					}
 				}
 				this.log.debug(`Octopus daily consumption calculated: ${total} kWh`);
-				return total;
+				return { 
+					total: parseFloat(total.toFixed(3)), 
+					go: parseFloat(go.toFixed(3)), 
+					standard: parseFloat(standard.toFixed(3)) 
+				};
 			}
 
 			this.log.warn('Could not parse electricity readings from Kraken response.');
@@ -314,7 +352,24 @@ class EnergyCompare extends utils.Adapter {
 		}
 	}
 
-	async fetchInexogy(start, end) {
+	parseInexogyData(dataRes) {
+		if (dataRes.status === 200 && dataRes.data && dataRes.data.energy) {
+			const energyData = dataRes.data.energy;
+			const min = energyData.minimum || 0;
+			const max = energyData.maximum || 0;
+			const diffWh = Math.abs(max - min);
+
+			let kwh = diffWh / 10000000000;
+			if (diffWh > 0 && diffWh < 100000) {
+				kwh = diffWh / 1000;
+			}
+
+			return parseFloat(kwh.toFixed(3));
+		}
+		return null;
+	}
+
+	async fetchInexogy(start, end, split) {
 		try {
 			this.log.debug(`Authenticating with Inexogy for ${this.config.inexogyEmail}`);
 			// Note: Inexogy (Discovergy) uses its OAuth or fallback Basic Auth
@@ -348,39 +403,44 @@ class EnergyCompare extends utils.Adapter {
 			const meterId = this.inexogyMeterId;
 
 			// 2. Fetch statistics using the meterId
-			const url = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}`;
-			this.log.debug(`Fetching: ${url}`);
+			const headers = { Authorization: `Basic ${basicAuth}` };
 
-			const dataRes = await axios.get(url, {
-				headers: { Authorization: `Basic ${basicAuth}` },
-				validateStatus: () => true,
-			});
+			if (!split) {
+				const url = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}`;
+				this.log.debug(`Fetching: ${url}`);
 
-			if (dataRes.status === 200 && dataRes.data && dataRes.data.energy) {
-				const energyData = dataRes.data.energy;
-				const min = energyData.minimum || 0;
-				const max = energyData.maximum || 0;
-				const diffWh = Math.abs(max - min);
-
-				let kwh = diffWh / 10000000000; // discovergy sends often in 10^-7 kWh multipliers
-				// Fallback sanity check if it's straight Wh
-				if (diffWh > 0 && diffWh < 100000) {
-					kwh = diffWh / 1000;
+				const dataRes = await axios.get(url, { headers, validateStatus: () => true });
+				const total = this.parseInexogyData(dataRes);
+				if (total !== null) {
+					return { total, go: 0, standard: 0 };
+				} else if (dataRes.status === 401 || dataRes.status === 403) {
+					this.log.error('Inexogy Authentication failed. Verify Email and Password.');
+				} else {
+					this.log.warn(`No Inexogy data returned. Status: ${dataRes.status}`);
 				}
+				return null;
+			} else {
+				const goEnd = new Date(start.getTime());
+				goEnd.setHours(5, 0, 0, 0);
 
-				this.log.debug(`Inexogy daily consumption calculated from statistics: ${kwh} kWh`);
-				return kwh;
-			} else if (dataRes.status === 200) {
-				this.log.warn('Inexogy statistics did not contain energy data.');
+				const urlGo = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${goEnd.getTime()}`;
+				const resGo = await axios.get(urlGo, { headers, validateStatus: () => true });
+				const go = this.parseInexogyData(resGo);
+
+				const urlStd = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${goEnd.getTime()}&to=${end.getTime()}`;
+				const resStd = await axios.get(urlStd, { headers, validateStatus: () => true });
+				const standard = this.parseInexogyData(resStd);
+
+				if (go !== null && standard !== null) {
+					const total = parseFloat((go + standard).toFixed(3));
+					return { total, go, standard };
+				} else if (resGo.status === 401 || resGo.status === 403 || resStd.status === 401 || resStd.status === 403) {
+					this.log.error('Inexogy Authentication failed. Verify Email and Password.');
+				} else {
+					this.log.warn(`Inexogy data split fetch failed.`);
+				}
 				return null;
 			}
-			// If BasicAuth fails, log error and try OAuth hint if necessary
-			if (dataRes.status === 401 || dataRes.status === 403) {
-				this.log.error('Inexogy Authentication failed. Verify Email and Password.');
-			} else {
-				this.log.warn(`No Inexogy data returned for period. Status: ${dataRes.status}`);
-			}
-			return null;
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
 			return null;
