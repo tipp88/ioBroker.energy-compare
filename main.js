@@ -161,7 +161,9 @@ class EnergyCompare extends utils.Adapter {
 			const propertyPayload = {
 				query: `query getPropertyIds($accountNumber: String!) {
 					account(accountNumber: $accountNumber) {
-						id
+						properties {
+							id
+						}
 					}
 				}`,
 				variables: {
@@ -182,11 +184,13 @@ class EnergyCompare extends utils.Adapter {
 				return null;
 			}
 
-			const propertyId = propRes.data?.data?.account?.id;
-			if (!propertyId) {
-				this.log.error('Could not find property ID in Kraken response.');
+			const propertiesList = propRes.data?.data?.account?.properties;
+			if (!propertiesList || propertiesList.length === 0) {
+				this.log.error('Could not find any properties in Kraken response.');
 				return null;
 			}
+			
+			const propertyId = propertiesList[0].id;
 
 			// 3. Query Consumption
 			this.log.debug(`Fetcing consumption for property: ${propertyId}`);
