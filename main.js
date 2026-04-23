@@ -128,8 +128,8 @@ class EnergyCompare extends utils.Adapter {
 		try {
 			this.log.debug(`Authenticating with Kraken (Octopus) for ${this.config.octopusEmail}`);
 			// 1. Authenticate with Kraken GraphQL
-			// Note: Replace API domain if necessary (api.ooe-api.com for Octopus Germany or api.octopus.energy for UK)
-			const apiDomain = 'https://api.ooe-api.com/v1/graphql/';
+			// Octopus Energy Germany endpoint
+			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 
 			const authPayload = {
 				query: `mutation obtainKrakenToken($input: ObtainJSONWebTokenInput!) {
@@ -215,7 +215,28 @@ class EnergyCompare extends utils.Adapter {
 				'base64',
 			);
 
-			const url = `https://api.inexogy.com/api/1/readings?from=${start.getTime()}&to=${end.getTime()}&resolution=one_day`;
+			// 1. Fetch meters to get the meterId
+			const meterUrl = 'https://api.discovergy.com/public/v1/meters';
+			this.log.debug(`Fetching meters: ${meterUrl}`);
+			const meterRes = await axios.get(meterUrl, {
+				headers: { Authorization: `Basic ${basicAuth}` },
+				validateStatus: () => true,
+			});
+
+			if (meterRes.status !== 200 || !meterRes.data || meterRes.data.length === 0) {
+				if (meterRes.status === 401 || meterRes.status === 403) {
+					this.log.error('Inexogy Authentication failed. Verify Email and Password.');
+				} else {
+					this.log.error(`Inexogy meters fetch failed. Status: ${meterRes.status}`);
+				}
+				return null;
+			}
+			
+			const meterId = meterRes.data[0].meterId;
+			this.log.debug(`Found Inexogy meterId: ${meterId}`);
+
+			// 2. Fetch readings using the meterId
+			const url = `https://api.discovergy.com/public/v1/readings?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}&resolution=one_day`;
 			this.log.debug(`Fetching: ${url}`);
 
 			const dataRes = await axios.get(url, {
