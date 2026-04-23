@@ -329,12 +329,23 @@ class EnergyCompare extends utils.Adapter {
 			const edges = dataRes.data?.data?.account?.property?.measurements?.edges;
 
 			if (edges && Array.isArray(edges) && edges.length > 0) {
+				this.log.debug(`Octopus: Processing ${edges.length} edges for ${dateString}. First unit: ${edges[0].node.unit}`);
+				const startMs = start.getTime();
+				const endMs = start.getTime() + 24 * 60 * 60 * 1000;
+
 				for (const edge of edges) {
 					const nodeVal = parseFloat(edge.node?.value || 0);
+					const startDt = new Date(edge.node.startAt);
+					const nodeMs = startDt.getTime();
+
+					// Strict Date Check: only sum values that belong to the target 24h window
+					if (nodeMs < startMs || nodeMs >= endMs) {
+						continue;
+					}
+
 					total += nodeVal;
 
 					if (split) {
-						const startDt = new Date(edge.node.startAt);
 						if (startDt.getHours() < 5) {
 							go += nodeVal;
 						} else {
@@ -342,7 +353,7 @@ class EnergyCompare extends utils.Adapter {
 						}
 					}
 				}
-				this.log.debug(`Octopus daily consumption calculated: ${total} kWh`);
+				this.log.debug(`Octopus calculated: total=${total}, go=${go}, std=${standard}`);
 				return { 
 					total: parseFloat(total.toFixed(3)), 
 					go: parseFloat(go.toFixed(3)), 
