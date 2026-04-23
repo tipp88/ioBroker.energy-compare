@@ -54,10 +54,7 @@ To install this adapter seamlessly into your ioBroker environment:
 Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `energy-compare.0.history` path.
 
 ## Changelog
-<!--
-	Placeholder for the next version (at the beginning of the line):
-	### **WORK IN PROGRESS**
--->
+### **WORK IN PROGRESS**
 
 ### 0.1.0 (2026-04-23)
 * (tipp88) Initial release with 30-day API cache sweep and deep property introspection.
@@ -65,7 +62,7 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 ## License
 MIT License
 
-Copyright (c) 2026 User <user@example.com>
+Copyright (c) 2026 tipp88
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
