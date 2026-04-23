@@ -147,7 +147,7 @@ class EnergyCompare extends utils.Adapter {
 					await this.writeStateObject(`${basePath}.octopus.goConsumption`, 'Octopus Go Consumption', octopusData.go);
 					await this.writeStateObject(`${basePath}.octopus.standardConsumption`, 'Octopus Standard Consumption', octopusData.standard);
 
-					if (this.hasInexogy) {
+					if (inexogyData) {
 						await this.writeStateObject(`${basePath}.inexogy.goConsumption`, 'Inexogy Go Consumption', inexogyData.go);
 						await this.writeStateObject(`${basePath}.inexogy.standardConsumption`, 'Inexogy Standard Consumption', inexogyData.standard);
 
@@ -169,7 +169,7 @@ class EnergyCompare extends utils.Adapter {
 					// Normal Write
 					await this.writeStateObject(`${basePath}.octopus.dailyConsumption`, 'Octopus Daily Consumption', octopusData.total);
 
-					if (this.hasInexogy) {
+					if (inexogyData) {
 						await this.writeStateObject(`${basePath}.inexogy.dailyConsumption`, 'Inexogy Daily Consumption', inexogyData.total);
 
 						const diff = Math.abs(octopusData.total - inexogyData.total);
