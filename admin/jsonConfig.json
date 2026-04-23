@@ -1,0 +1,91 @@
+{
+	"i18n": false,
+	"type": "tabs",
+	"items": {
+		"octopusTab": {
+			"type": "panel",
+			"label": "Octopus Energy (Kraken)",
+			"icon": "AccountCircle",
+			"items": {
+				"octopusHeader": {
+					"type": "header",
+					"text": "Octopus Energy Login Details",
+					"size": 3
+				},
+				"octopusEmail": {
+					"type": "text",
+					"label": "Email Address",
+					"newLine": true,
+					"sm": 12,
+					"md": 6
+				},
+				"octopusPassword": {
+					"type": "password",
+					"label": "Password",
+					"newLine": false,
+					"sm": 12,
+					"md": 6
+				},
+				"octopusAccount": {
+					"type": "text",
+					"label": "Account Number",
+					"newLine": true,
+					"sm": 12,
+					"md": 6
+				}
+			}
+		},
+		"inexogyTab": {
+			"type": "panel",
+			"label": "Inexogy",
+			"icon": "FlashOn",
+			"items": {
+				"inexogyHeader": {
+					"type": "header",
+					"text": "Inexogy Login Details",
+					"size": 3
+				},
+				"inexogyEmail": {
+					"type": "text",
+					"label": "Email Address",
+					"newLine": true,
+					"sm": 12,
+					"md": 6
+				},
+				"inexogyPassword": {
+					"type": "password",
+					"label": "Password",
+					"newLine": false,
+					"sm": 12,
+					"md": 6
+				}
+			}
+		},
+		"settingsTab": {
+			"type": "panel",
+			"label": "Settings",
+			"icon": "Settings",
+			"items": {
+				"settingsHeader": {
+					"type": "header",
+					"text": "General Adapter Settings",
+					"size": 3
+				},
+				"discrepancyThreshold": {
+					"type": "number",
+					"label": "Discrepancy Threshold (kWh) to flag mismatches",
+					"newLine": true,
+					"sm": 12,
+					"md": 6
+				},
+				"cronSchedule": {
+					"type": "text",
+					"label": "Data Refresh CRON Schedule",
+					"newLine": false,
+					"sm": 12,
+					"md": 6
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,99 @@
+{
+	"common": {
+		"name": "energy-compare",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"uk": "Початкова версія",
+				"zh-cn": "首次出版"
+			}
+		},
+		"titleLang": {
+			"en": "Energy Compare",
+			"de": "Energievergleich",
+			"ru": "Сравнение энергии",
+			"pt": "Comparação de energia",
+			"nl": "Energie vergelijken",
+			"fr": "Comparateur d'énergie",
+			"it": "Confronto energetico",
+			"es": "Comparación de energía",
+			"pl": "Porównanie energii",
+			"uk": "Енергія Порівн",
+			"zh-cn": "能源比较"
+		},
+		"desc": {
+			"en": "Compare Octopus Energy and Inexogy daily consumption",
+			"de": "Vergleichen Sie den täglichen Verbrauch von Octopus Energy und Inexogy",
+			"ru": "Сравните ежедневное потребление Octopus Energy и Inexogy",
+			"pt": "Compare o consumo diário de Octopus Energy e Inexogy",
+			"nl": "Vergelijk het dagelijkse verbruik van Octopus Energy en Inexogy",
+			"fr": "Comparez la consommation journalière de Octopus Energy et Inexogy",
+			"it": "Confronta il consumo giornaliero di Octopus Energy e Inexogy",
+			"es": "Compara el consumo diario de Octopus Energy e Inexogy",
+			"pl": "Porównaj dzienne spożycie Octopus Energy i Inexogy",
+			"uk": "Порівняйте добове споживання Octopus Energy та Inexogy",
+			"zh-cn": "比较 Octopus Energy 和 Inexogy 的每日消耗量"
+		},
+		"authors": [
+			"User <user@example.com>"
+		],
+		"keywords": [
+			"octopus",
+			"inexogy",
+			"energy"
+		],
+		"licenseInformation": {
+			"type": "free",
+			"license": "MIT"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "energy-compare.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/User/ioBroker.energy-compare/main/admin/energy-compare.png",
+		"readme": "https://github.com/User/ioBroker.energy-compare/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "energy",
+		"compact": true,
+		"connectionType": "cloud",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=7.0.23"
+			}
+		]
+	},
+	"encryptedNative": [
+		"octopusPassword",
+		"inexogyPassword"
+	],
+	"native": {
+		"octopusEmail": "",
+		"octopusPassword": "",
+		"octopusAccount": "",
+		"inexogyEmail": "",
+		"inexogyPassword": "",
+		"discrepancyThreshold": 0.1,
+		"cronSchedule": "0 2 * * *"
+	},
+	"objects": [],
+	"instanceObjects": []
+}
