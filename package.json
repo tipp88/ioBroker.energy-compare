@@ -1,7 +1,7 @@
 {
   "name": "iobroker.energy-compare",
-  "version": "0.0.1",
-  "description": "Compare Octopus Energy and Inexogy daily consumption",
+  "version": "0.1.0",
+  "description": "Compare daily energy consumption between Octopus Energy and Inexogy",
   "author": {
     "name": "User",
     "email": "user@example.com"
