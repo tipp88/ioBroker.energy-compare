@@ -55,6 +55,7 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 
 ## Changelog
 ### **WORK IN PROGRESS**
+* (tipp88) Added data retention setting and aggregated history JSON states.
 
 ### 0.1.0 (2026-04-23)
 * (tipp88) Initial release with 30-day API cache sweep and deep property introspection.
