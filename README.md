@@ -8,102 +8,50 @@
 
 [![NPM](https://nodei.co/npm/iobroker.energy-compare.png?downloads=true)](https://nodei.co/npm/iobroker.energy-compare/)
 
-**Tests:** ![Test and Release](https://github.com/User/ioBroker.energy-compare/workflows/Test%20and%20Release/badge.svg)
+**Tests:** ![Test and Release](https://github.com/tipp88/ioBroker.energy-compare/workflows/Test%20and%20Release/badge.svg)
 
-## energy-compare adapter for ioBroker
+## ioBroker.energy-compare
 
-Compare Octopus Energy and Inexogy daily consumption
+The **Energy Compare** adapter periodically fetches daily electricity consumption data from **Octopus Energy (Kraken API)** and **Inexogy (Discovergy/Statistics API)**, saving it automatically within your ioBroker object tree.
 
-## Developer manual
-This section is intended for the developer. It can be deleted later.
+Its key purpose is identifying discrepancies in billing/measurement between your intelligent smart meter (Inexogy) and your energy supplier (Octopus Energy). Every night, the adapter compares both datasets and flags daily discrepancies that exceed a configurable threshold mathematically.
 
-### DISCLAIMER
+### 🌟 Features
+* **Full Kraken GraphQL Support:** Authenticates via your Octopus JWT tokens and dynamically resolves your Home Property ID to download daily smart meter consumption edges.
+* **Inexogy Differential Statistics:** Leverages Discovergys modern Statistics endpoint to accurately extrapolate exact 24-h chunks minimizing trailing comma discrepancies.
+* **30-Day Zero Load Caching:** Upon startup (or daily execution via Cron at 02:00 AM), the adapter retroactively reviews the past 30 days. To strictly minimize heavy API loads, the adapter queries its own ioBroker cache first — it only fires external web requests for days that are actively missing from your history tree.
+* **Dynamic IO-Trees:** Automatically structures all datasets by real dates under the `history.YYYY-MM-DD` parent tree.
 
-Please make sure that you consider copyrights and trademarks when you use names or logos of a company and add a disclaimer to your README.
-You can check other adapters for examples or ask in the developer community. Using a name or logo of a company without permission may cause legal problems for you.
+---
 
-### Getting started
+### ⚙️ Installation
 
-You are almost done, only a few steps left:
-1. Create a new repository on GitHub with the name `ioBroker.energy-compare`
-1. Initialize the current folder as a new git repository:  
-	```bash
-	git init -b main
-	git add .
-	git commit -m "Initial commit"
-	```
-1. Link your local repository with the one on GitHub:  
-	```bash
-	git remote add origin https://github.com/User/ioBroker.energy-compare
-	```
+To install this adapter seamlessly into your ioBroker environment:
 
-1. Push all files to the GitHub repo:  
-	```bash
-	git push origin main
-	```
-1. Add a new secret under https://github.com/User/ioBroker.energy-compare/settings/secrets. It must be named `AUTO_MERGE_TOKEN` and contain a personal access token with push access to the repository, e.g. yours. You can create a new token under https://github.com/settings/tokens.
+1. Open your ioBroker Admin UI in the browser.
+2. Ensure Expert Mode is enabled (headman icon).
+3. Navigate to **"Adapters"**.
+4. Click the GitHub / Custom URL icon ("Install from custom URL").
+5. Switch to the **Custom** tab and paste the raw GitHub repository URL:
+   `https://github.com/tipp88/ioBroker.energy-compare`
+6. Click install. Once downloaded, create a new instance (the little `+` button).
 
-1. Head over to [main.js](main.js) and start programming!
+---
 
-### Best Practices
-We've collected some [best practices](https://github.com/ioBroker/ioBroker.repositories#development-and-coding-best-practices) regarding ioBroker development and coding in general. If you're new to ioBroker or Node.js, you should
-check them out. If you're already experienced, you should also take a look at them - you might learn something new :)
+### 🔧 Configuration
 
-### State Roles
-When creating state objects, it is important to use the correct role for the state. The role defines how the state should be interpreted by visualizations and other adapters. For a list of available roles and their meanings, please refer to the [state roles documentation](https://www.iobroker.net/#en/documentation/dev/stateroles.md).
+1. **Octopus Energy (Kraken):** 
+   - Enter your standard Octopus login credentials (Email & Password).
+   - Input your Account Number (usually starts with `A-`).
+   - *(Optional)* Property ID: If Kraken refuses to dynamically match your `propertyId`, you can explicitly set it here to hard-override the Graph query.
+   
+2. **Inexogy:**
+   - Enter your Inexogy portal Email & Password. The adapter automatically manages Basic Auth parsing and translates it into Discovergy API queries.
 
-**Important:** Do not invent your own custom role names. If you need a role that is not part of the official list, please contact the ioBroker developer community for guidance and discussion about adding new roles.
+3. **General Settings:**
+   - **Discrepancy Threshold:** Defines how many `kWh` difference must be present between Octopus and Inexogy to trigger the `hasDiscrepancy: true` state flag. Default is `0.1 kWh`.
 
-### Scripts in `package.json`
-Several npm scripts are predefined for your convenience. You can run them using `npm run <scriptname>`
-| Script name | Description |
-|-------------|-------------|
-| `test:js` | Executes the tests you defined in `*.test.js` files. |
-| `test:package` | Ensures your `package.json` and `io-package.json` are valid. |
-| `test:integration` | Tests the adapter startup with an actual instance of ioBroker. |
-| `test` | Performs a minimal test run on package files and your tests. |
-| `check` | Performs a type-check on your code (without compiling anything). |
-| `lint` | Runs `ESLint` to check your code for formatting errors and potential bugs. |
-| `translate` | Translates texts in your adapter to all required languages, see [`@iobroker/adapter-dev`](https://github.com/ioBroker/adapter-dev#manage-translations) for more details. |
-| `release` | Creates a new release, see [`@alcalzone/release-script`](https://github.com/AlCalzone/release-script#usage) for more details. |
-
-### Writing tests
-When done right, testing code is invaluable, because it gives you the 
-confidence to change your code while knowing exactly if and when 
-something breaks. A good read on the topic of test-driven development 
-is https://hackernoon.com/introduction-to-test-driven-development-tdd-61a13bc92d92. 
-Although writing tests before the code might seem strange at first, but it has very 
-clear upsides.
-
-The template provides you with basic tests for the adapter startup and package files.
-It is recommended that you add your own tests into the mix.
-
-### Publishing the adapter
-Using GitHub Actions, you can enable automatic releases on npm whenever you push a new git tag that matches the form 
-`v<major>.<minor>.<patch>`. We **strongly recommend** that you do. The necessary steps are described in `.github/workflows/test-and-release.yml`.
-
-Since you installed the release script, you can create a new
-release simply by calling:
-```bash
-npm run release
-```
-Additional command line options for the release script are explained in the
-[release-script documentation](https://github.com/AlCalzone/release-script#command-line).
-
-To get your adapter released in ioBroker, please refer to the documentation 
-of [ioBroker.repositories](https://github.com/ioBroker/ioBroker.repositories#requirements-for-adapter-to-get-added-to-the-latest-repository).
-
-### Test the adapter manually with dev-server
-Since you set up `dev-server`, you can use it to run, test and debug your adapter.
-
-You may start `dev-server` by calling from your dev directory:
-```bash
-dev-server watch
-```
-
-The ioBroker.admin interface will then be available at http://localhost:undefined/
-
-Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev-server#command-line) for more details.
+Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `energy-compare.0.history` path.
 
 ## Changelog
 <!--
@@ -111,8 +59,8 @@ Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev
 	### **WORK IN PROGRESS**
 -->
 
-### **WORK IN PROGRESS**
-* (User) initial release
+### 0.1.0 (2026-04-23)
+* (tipp88) Initial release with 30-day API cache sweep and deep property introspection.
 
 ## License
 MIT License
