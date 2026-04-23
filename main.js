@@ -156,41 +156,45 @@ class EnergyCompare extends utils.Adapter {
 				return null;
 			}
 
-			// 2. Query Property ID
-			this.log.debug('Kraken token received. Fetching property ID...');
-			const propertyPayload = {
-				query: `query getPropertyIds($accountNumber: String!) {
-					account(accountNumber: $accountNumber) {
-						properties {
-							id
-						}
-					}
-				}`,
-				variables: {
-					accountNumber: this.config.octopusAccount,
-				},
-			};
-
-			const propRes = await axios.post(apiDomain, propertyPayload, {
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: token,
-				},
-				validateStatus: () => true,
-			});
-
-			if (propRes.status !== 200 || propRes.data?.errors) {
-				this.log.error(`Octopus property fetch failed: ${JSON.stringify(propRes.data)}`);
-				return null;
-			}
-
-			const propertiesList = propRes.data?.data?.account?.properties;
-			if (!propertiesList || propertiesList.length === 0) {
-				this.log.error('Could not find any properties in Kraken response.');
-				return null;
-			}
+			// 2. Query Property ID (if not provided in config)
+			let propertyId = this.config.octopusPropertyId || '';
 			
-			const propertyId = propertiesList[0].id;
+			if (!propertyId) {
+				this.log.debug('Kraken token received. Fetching property ID dynamically...');
+				const propertyPayload = {
+					query: `query getPropertyIds($accountNumber: String!) {
+						account(accountNumber: $accountNumber) {
+							properties {
+								id
+							}
+						}
+					}`,
+					variables: {
+						accountNumber: this.config.octopusAccount,
+					},
+				};
+
+				const propRes = await axios.post(apiDomain, propertyPayload, {
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: token,
+					},
+					validateStatus: () => true,
+				});
+
+				if (propRes.status !== 200 || propRes.data?.errors) {
+					this.log.error(`Octopus property fetch failed: ${JSON.stringify(propRes.data)}`);
+					return null;
+				}
+
+				const propertiesList = propRes.data?.data?.account?.properties;
+				if (!propertiesList || propertiesList.length === 0) {
+					this.log.error('Could not find any properties in Kraken response.');
+					return null;
+				}
+				
+				propertyId = propertiesList[0].id;
+			}
 
 			// 3. Query Consumption
 			this.log.debug(`Fetcing consumption for property: ${propertyId}`);

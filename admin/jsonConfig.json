@@ -32,6 +32,14 @@
 					"newLine": true,
 					"sm": 12,
 					"md": 6
+				},
+				"octopusPropertyId": {
+					"type": "text",
+					"label": "Property ID (Optional)",
+					"help": "Leave blank to auto-detect. Only set if API detection fails.",
+					"newLine": false,
+					"sm": 12,
+					"md": 6
 				}
 			}
 		},
