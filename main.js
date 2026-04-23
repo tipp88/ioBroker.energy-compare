@@ -41,7 +41,6 @@ class EnergyCompare extends utils.Adapter {
 	}
 
 	async setupObjects() {
-		/** @type {Array<{id: string, name: string, type: ioBroker.CommonType, role: string, unit?: string}>} */
 		const states = [
 			{
 				id: 'octopus.dailyConsumption',
@@ -124,7 +123,7 @@ class EnergyCompare extends utils.Adapter {
 		}
 	}
 
-	async fetchOctopus(start, end) {
+	async fetchOctopus(start, _end) {
 		try {
 			this.log.debug(`Authenticating with Kraken (Octopus) for ${this.config.octopusEmail}`);
 			// 1. Authenticate with Kraken GraphQL
@@ -156,52 +155,96 @@ class EnergyCompare extends utils.Adapter {
 				return null;
 			}
 
-			// 2. Query Consumption via GraphQL
-			this.log.debug('Kraken token received. Fetching consumption...');
-			const consumptionPayload = {
-				query: `query getConsumption($accountNumber: String!, $startAt: DateTime!, $endAt: DateTime!) {
-                    account(accountNumber: $accountNumber) {
-                        properties {
-                            electricityMeterPoints {
-                                halfHourlyReadings(startAt: $startAt, endAt: $endAt) {
-                                    value
-                                }
-                            }
-                        }
-                    }
-                }`,
+			// 2. Query Property ID
+			this.log.debug('Kraken token received. Fetching property ID...');
+			const propertyPayload = {
+				query: `query getPropertyIds($accountNumber: String!) {
+					account(accountNumber: $accountNumber) {
+						id
+					}
+				}`,
 				variables: {
 					accountNumber: this.config.octopusAccount,
-					startAt: start.toISOString(),
-					endAt: end.toISOString(),
 				},
 			};
 
-			const dataRes = await axios.post(apiDomain, consumptionPayload, {
+			const propRes = await axios.post(apiDomain, propertyPayload, {
 				headers: {
 					'Content-Type': 'application/json',
 					Authorization: token,
 				},
 				validateStatus: () => true,
 			});
-			
-			if (dataRes.status !== 200) {
-				this.log.error(`Octopus consumption fetch failed with status ${dataRes.status}: ${JSON.stringify(dataRes.data)}`);
+
+			if (propRes.status !== 200 || propRes.data?.errors) {
+				this.log.error(`Octopus property fetch failed: ${JSON.stringify(propRes.data)}`);
 				return null;
 			}
 
-			// 3. Extract and Sum Data
-			let total = 0;
-			const properties = dataRes.data?.data?.account?.properties;
-			if (properties && properties.length > 0) {
-				const points = properties[0]?.electricityMeterPoints?.[0]?.halfHourlyReadings;
-				if (points && Array.isArray(points)) {
-					for (const reading of points) {
-						total += parseFloat(reading.value || 0);
+			const propertyId = propRes.data?.data?.account?.id;
+			if (!propertyId) {
+				this.log.error('Could not find property ID in Kraken response.');
+				return null;
+			}
+
+			// 3. Query Consumption
+			this.log.debug(`Fetcing consumption for property: ${propertyId}`);
+			// Format date as YYYY-MM-DD
+			const dateString = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+
+			const usagePayload = {
+				query: `query getSmartMeterUsage($accountNumber: String!, $propertyId: ID!, $date: Date!) {
+					account(accountNumber: $accountNumber) {
+						property(id: $propertyId) {
+							measurements(
+								utilityFilters: {electricityFilters: {readingFrequencyType: DAY_INTERVAL, readingQuality: ACTUAL}}
+								startOn: $date
+								first: 1
+							) {
+								edges {
+									node {
+										... on IntervalMeasurementType {
+											endAt
+											startAt
+											unit
+											value
+										}
+									}
+								}
+							}
+						}
 					}
-					this.log.debug(`Octopus daily consumption calculated: ${total} kWh`);
-					return total;
+				}`,
+				variables: {
+					accountNumber: this.config.octopusAccount,
+					propertyId: propertyId,
+					date: dateString,
+				},
+			};
+
+			const dataRes = await axios.post(apiDomain, usagePayload, {
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: token,
+				},
+				validateStatus: () => true,
+			});
+
+			if (dataRes.status !== 200 || dataRes.data?.errors) {
+				this.log.error(`Octopus consumption fetch failed: ${JSON.stringify(dataRes.data)}`);
+				return null;
+			}
+
+			// 4. Extract Data
+			let total = 0;
+			const edges = dataRes.data?.data?.account?.property?.measurements?.edges;
+
+			if (edges && Array.isArray(edges) && edges.length > 0) {
+				for (const edge of edges) {
+					total += parseFloat(edge.node?.value || 0);
 				}
+				this.log.debug(`Octopus daily consumption calculated: ${total} kWh`);
+				return total;
 			}
 
 			this.log.warn('Could not parse electricity readings from Kraken response.');
@@ -237,7 +280,7 @@ class EnergyCompare extends utils.Adapter {
 				}
 				return null;
 			}
-			
+
 			const meterId = meterRes.data[0].meterId;
 			this.log.debug(`Found Inexogy meterId: ${meterId}`);
 
