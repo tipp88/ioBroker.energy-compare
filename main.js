@@ -51,6 +51,33 @@ class EnergyCompare extends utils.Adapter {
 			},
 			native: {},
 		});
+
+		// Create provider summary states
+		await this.setObjectNotExistsAsync('octopus.historyJson', {
+			type: 'state',
+			common: {
+				name: 'Octopus Consumption History (JSON Array)',
+				type: 'string',
+				role: 'json',
+				read: true,
+				write: false,
+			},
+			native: {},
+		});
+
+		if (this.config.inexogyEmail) {
+			await this.setObjectNotExistsAsync('inexogy.historyJson', {
+				type: 'state',
+				common: {
+					name: 'Inexogy Consumption History (JSON Array)',
+					type: 'string',
+					role: 'json',
+					read: true,
+					write: false,
+				},
+				native: {},
+			});
+		}
 	}
 
 	/**
@@ -79,6 +106,9 @@ class EnergyCompare extends utils.Adapter {
 	async syncData() {
 		const syncDays = Number(this.config.syncDays) || 30;
 		this.log.info(`Starting ${syncDays}-day retroactive data sync...`);
+
+		// Start with cleanup
+		await this.cleanupHistory();
 
 		try {
 			for (let i = syncDays; i >= 1; i--) {
@@ -192,6 +222,9 @@ class EnergyCompare extends utils.Adapter {
 			}
 
 			this.log.info(`${syncDays}-day sync cycle completed successfully.`);
+
+			// After sync loop, update the aggregate JSON states
+			await this.updateHistoryJson();
 		} catch (error) {
 			this.log.error(`Error during syncData: ${error.message}`);
 		}
@@ -462,6 +495,109 @@ class EnergyCompare extends utils.Adapter {
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
 			return null;
+		}
+	}
+
+	async cleanupHistory() {
+		const retentionDays = Number(this.config.retentionDays);
+		if (isNaN(retentionDays) || retentionDays <= 0) {
+			this.log.debug('Retention disabled or invalid value.');
+			return;
+		}
+
+		this.log.info(`Cleaning up history older than ${retentionDays} days...`);
+		const cutoffDate = new Date();
+		cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+		cutoffDate.setHours(0, 0, 0, 0);
+
+		// Get all objects under history
+		const objects = await this.getAdapterObjectsAsync();
+		const historyPrefix = `${this.namespace}.history.`;
+
+		for (const id of Object.keys(objects)) {
+			if (id.startsWith(historyPrefix)) {
+				// ID format: energy-compare.0.history.YYYY-MM-DD...
+				const relativeId = id.substring(historyPrefix.length);
+				const datePart = relativeId.split('.')[0]; // YYYY-MM-DD
+
+				if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+					const [year, month, day] = datePart.split('-').map(Number);
+					const stateDate = new Date(year, month - 1, day);
+					if (stateDate < cutoffDate) {
+						this.log.debug(`Deleting old history object: ${id}`);
+						// delObject needs id without namespace
+						await this.delObjectAsync(id.substring(this.namespace.length + 1));
+					}
+				}
+			}
+		}
+	}
+
+	async updateHistoryJson() {
+		this.log.info('Updating history JSON arrays...');
+		const objects = await this.getAdapterObjectsAsync();
+		const historyPrefix = `${this.namespace}.history.`;
+		
+		const dates = new Set();
+		for (const id of Object.keys(objects)) {
+			if (id.startsWith(historyPrefix)) {
+				const relativeId = id.substring(historyPrefix.length);
+				const datePart = relativeId.split('.')[0];
+				if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+					dates.add(datePart);
+				}
+			}
+		}
+
+		const sortedDates = Array.from(dates).sort();
+		const octopusHistory = [];
+		const inexogyHistory = [];
+
+		for (const dateStr of sortedDates) {
+			const [year, month, day] = dateStr.split('-').map(Number);
+			const timestamp = new Date(year, month - 1, day).getTime();
+			const basePath = `history.${dateStr}`;
+
+			// Octopus
+			const octGo = await this.getStateAsync(`${basePath}.octopus.goConsumption`);
+			const octStd = await this.getStateAsync(`${basePath}.octopus.standardConsumption`);
+			const octTotal = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
+
+			const octGoVal = (octGo && octGo.val != null) ? Number(octGo.val) : 0;
+			const octStdVal = (octStd && octStd.val != null) ? Number(octStd.val) : 0;
+			const octTotalVal = (octTotal && octTotal.val != null) ? Number(octTotal.val) : parseFloat((octGoVal + octStdVal).toFixed(3));
+
+			octopusHistory.push({
+				date: dateStr,
+				timestamp: timestamp,
+				go: octGoVal,
+				standard: octStdVal,
+				total: octTotalVal
+			});
+
+			// Inexogy
+			if (this.hasInexogy) {
+				const inxGo = await this.getStateAsync(`${basePath}.inexogy.goConsumption`);
+				const inxStd = await this.getStateAsync(`${basePath}.inexogy.standardConsumption`);
+				const inxTotal = await this.getStateAsync(`${basePath}.inexogy.dailyConsumption`);
+
+				const inxGoVal = (inxGo && inxGo.val != null) ? Number(inxGo.val) : 0;
+				const inxStdVal = (inxStd && inxStd.val != null) ? Number(inxStd.val) : 0;
+				const inxTotalVal = (inxTotal && inxTotal.val != null) ? Number(inxTotal.val) : parseFloat((inxGoVal + inxStdVal).toFixed(3));
+
+				inexogyHistory.push({
+					date: dateStr,
+					timestamp: timestamp,
+					go: inxGoVal,
+					standard: inxStdVal,
+					total: inxTotalVal
+				});
+			}
+		}
+
+		await this.setStateAsync('octopus.historyJson', { val: JSON.stringify(octopusHistory), ack: true });
+		if (this.hasInexogy) {
+			await this.setStateAsync('inexogy.historyJson', { val: JSON.stringify(inexogyHistory), ack: true });
 		}
 	}
 

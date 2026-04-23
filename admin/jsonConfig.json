@@ -105,6 +105,15 @@
 					"newLine": false,
 					"sm": 12,
 					"md": 6
+				},
+				"retentionDays": {
+					"type": "number",
+					"label": "Data Retention Days (e.g. 60, 0 to disable)",
+					"min": 0,
+					"max": 3650,
+					"newLine": true,
+					"sm": 12,
+					"md": 6
 				}
 			}
 		}

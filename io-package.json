@@ -99,7 +99,8 @@
 		"discrepancyThreshold": 0.1,
 		"cronSchedule": "0 2 * * *",
 		"splitGoTariff": false,
-		"syncDays": 30
+		"syncDays": 30,
+		"retentionDays": 0
 	},
 	"objects": [],
 	"instanceObjects": []
