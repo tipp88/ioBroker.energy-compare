@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "news": {
+      "0.3.1": {
+        "en": "Fix linting errors and repository structure.",
+        "de": "Linting-Fehler behoben.",
+        "ru": "Fix linting errors and repository structure.",
+        "pt": "Fix linting errors and repository structure.",
+        "nl": "Fix linting errors and repository structure.",
+        "fr": "Fix linting errors and repository structure.",
+        "it": "Fix linting errors and repository structure.",
+        "es": "Fix linting errors and repository structure.",
+        "pl": "Fix linting errors and repository structure.",
+        "uk": "Fix linting errors and repository structure.",
+        "zh-cn": "Fix linting errors and repository structure."
+      },
       "0.3.0": {
         "en": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
         "de": "Dynamische Tarife, hierarchische Historie und Stammdatenabruf implementiert.",
