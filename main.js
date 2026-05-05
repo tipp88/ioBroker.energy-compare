@@ -103,17 +103,20 @@ class EnergyCompare extends utils.Adapter {
 	}
 
 	/**
-	 * @param {string} id
-	 * @param {string} name
-	 * @param {any} value
-	 * @param {string} [role]
-	 * @param {ioBroker.CommonType} [type]
-	 * @param {string} [unit]
+	 * @param {string} id Object ID
+	 * @param {string} name Object Name
+	 * @param {any} value State Value
+	 * @param {string} [role] State Role
+	 * @param {ioBroker.CommonType} [type] State Type
+	 * @param {string} [unit] State Unit
 	 */
 	async writeStateObject(id, name, value, role = 'value', type = 'number', unit = '') {
 		if (!unit) {
-			if (role.includes('power') || name.includes('Consumption') || name.includes('Difference')) unit = 'kWh';
-			else if (name.includes('Cost') || name.includes('Balance')) unit = '€';
+			if (role.includes('power') || name.includes('Consumption') || name.includes('Difference')) {
+				unit = 'kWh';
+			} else if (name.includes('Cost') || name.includes('Balance')) {
+				unit = '€';
+			}
 		}
 		await this.setObjectNotExistsAsync(id, {
 			type: 'state',
@@ -170,7 +173,9 @@ class EnergyCompare extends utils.Adapter {
 					headers: { 'Content-Type': 'application/json' },
 				});
 				const token = authRes.data?.data?.obtainKrakenToken?.token;
-				if (!token) throw new Error('Octopus Login failed.');
+				if (!token) {
+					throw new Error('Octopus Login failed.');
+				}
 				this.octopusAuthToken = token;
 			}
 
@@ -219,15 +224,21 @@ class EnergyCompare extends utils.Adapter {
 
 			const account = dataRes.data.data.account;
 			const properties = account.properties || [];
-			if (properties.length === 0) throw new Error('No properties found');
+			if (properties.length === 0) {
+				throw new Error('No properties found');
+			}
 
 			const prop = properties[0];
 			const propertyId = prop.id;
 			const malo = prop.electricityMalos?.[0];
-			if (!malo) throw new Error('No electricityMalos found');
+			if (!malo) {
+				throw new Error('No electricityMalos found');
+			}
 
 			const activeAgreement = malo.agreements?.find(a => a.isActive);
-			if (!activeAgreement) throw new Error('No active agreement found');
+			if (!activeAgreement) {
+				throw new Error('No active agreement found');
+			}
 
 			let rates = [];
 			if (activeAgreement.unitRateInformation.__typename === 'TimeOfUseProductUnitRateInformation') {
@@ -270,14 +281,18 @@ class EnergyCompare extends utils.Adapter {
 	}
 
 	timeStrToHours(timeStr) {
-		if (!timeStr) return 0;
+		if (!timeStr) {
+			return 0;
+		}
 		const parts = timeStr.split(':');
 		return parseInt(parts[0], 10) + parseInt(parts[1] || 0, 10) / 60;
 	}
 
-	async fetchOctopus(start, end) {
+	async fetchOctopus(start, _end) {
 		try {
-			if (!this.masterData) return null;
+			if (!this.masterData) {
+				return null;
+			}
 			const isSplit = this.masterData.isTimeOfUse && this.masterData.rates.length > 1;
 
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
@@ -309,10 +324,14 @@ class EnergyCompare extends utils.Adapter {
 				validateStatus: () => true,
 			});
 
-			if (dataRes.status !== 200 || !dataRes.data?.data?.account) return null;
+			if (dataRes.status !== 200 || !dataRes.data?.data?.account) {
+				return null;
+			}
 
 			const edges = dataRes.data.data.account.property?.measurements?.edges;
-			if (!edges || edges.length === 0) return null;
+			if (!edges || edges.length === 0) {
+				return null;
+			}
 
 			const startMs = start.getTime();
 			const endMs = start.getTime() + 24 * 60 * 60 * 1000;
@@ -327,7 +346,9 @@ class EnergyCompare extends utils.Adapter {
 				const startDt = new Date(edge.node.startAt);
 				const nodeMs = startDt.getTime();
 
-				if (nodeMs < startMs || nodeMs >= endMs) continue;
+				if (nodeMs < startMs || nodeMs >= endMs) {
+					continue;
+				}
 
 				result.total += nodeVal;
 
@@ -379,7 +400,9 @@ class EnergyCompare extends utils.Adapter {
 		if (dataRes.status === 200 && dataRes.data && dataRes.data.energy) {
 			const diffWh = Math.abs((dataRes.data.energy.maximum || 0) - (dataRes.data.energy.minimum || 0));
 			let kwh = diffWh / 10000000000;
-			if (diffWh > 0 && diffWh < 100000) kwh = diffWh / 1000;
+			if (diffWh > 0 && diffWh < 100000) {
+				kwh = diffWh / 1000;
+			}
 			return parseFloat(kwh.toFixed(3));
 		}
 		return null;
@@ -387,7 +410,9 @@ class EnergyCompare extends utils.Adapter {
 
 	async fetchInexogy(start, end) {
 		try {
-			if (!this.masterData) return null;
+			if (!this.masterData) {
+				return null;
+			}
 			const isSplit = this.masterData.isTimeOfUse && this.masterData.rates.length > 1;
 			const basicAuth = Buffer.from(`${this.config.inexogyEmail}:${this.config.inexogyPassword}`).toString(
 				'base64',
@@ -398,7 +423,9 @@ class EnergyCompare extends utils.Adapter {
 					headers: { Authorization: `Basic ${basicAuth}` },
 					validateStatus: () => true,
 				});
-				if (meterRes.status !== 200 || !meterRes.data || meterRes.data.length === 0) return null;
+				if (meterRes.status !== 200 || !meterRes.data || meterRes.data.length === 0) {
+					return null;
+				}
 				this.inexogyMeterId = meterRes.data[0].meterId;
 			}
 
@@ -479,9 +506,6 @@ class EnergyCompare extends utils.Adapter {
 			return;
 		}
 
-		let currentMonth = { consumption: 0, cost: 0 };
-		const currentMonthStr = `${new Date().getFullYear()}.${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-
 		try {
 			for (let i = syncDays; i >= 1; i--) {
 				const targetDate = new Date();
@@ -523,7 +547,9 @@ class EnergyCompare extends utils.Adapter {
 
 					const octopusData = await this.fetchOctopus(targetDate, endDate);
 					let inexogyData = null;
-					if (this.hasInexogy) inexogyData = await this.fetchInexogy(targetDate, endDate);
+					if (this.hasInexogy) {
+						inexogyData = await this.fetchInexogy(targetDate, endDate);
+					}
 
 					if (octopusData) {
 						await this.writeStateObject(
@@ -595,10 +621,11 @@ class EnergyCompare extends utils.Adapter {
 								'boolean',
 							);
 
-							if (totalDiff >= threshold)
+							if (totalDiff >= threshold) {
 								this.log.warn(
 									`Discrepancy for ${yearStr}-${monthStr}-${dayStr}! Diff: ${totalDiff.toFixed(3)} kWh`,
 								);
+							}
 						}
 					} else {
 						this.log.warn(`Skipping ${yearStr}-${monthStr}-${dayStr} due to missing Octopus data.`);
@@ -635,8 +662,12 @@ class EnergyCompare extends utils.Adapter {
 					const year = parts[0];
 					const month = parts[1];
 
-					if (!yearMap[year]) yearMap[year] = { consumption: 0, cost: 0, months: {} };
-					if (!yearMap[year].months[month]) yearMap[year].months[month] = { consumption: 0, cost: 0 };
+					if (!yearMap[year]) {
+						yearMap[year] = { consumption: 0, cost: 0, months: {} };
+					}
+					if (!yearMap[year].months[month]) {
+						yearMap[year].months[month] = { consumption: 0, cost: 0 };
+					}
 
 					const consState = await this.getStateAsync(id);
 					const costState = await this.getStateAsync(
@@ -764,9 +795,11 @@ class EnergyCompare extends utils.Adapter {
 
 	onUnload(callback) {
 		try {
-			if (this.cronJob) this.cronJob.stop();
+			if (this.cronJob) {
+				this.cronJob.stop();
+			}
 			callback();
-		} catch (error) {
+		} catch {
 			callback();
 		}
 	}
