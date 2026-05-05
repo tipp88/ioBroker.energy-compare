@@ -265,6 +265,7 @@ class EnergyCompare extends utils.Adapter {
 				tariffName: activeAgreement.product?.displayName || 'Unknown',
 				isTimeOfUse: activeAgreement.product?.isTimeOfUse || false,
 				meterNumber: malo.meters?.[0]?.number || 'Unknown',
+				meterId: malo.meters?.[0]?.id || '',
 				mopName: malo.mop?.name || 'Unknown',
 				dnoName: malo.dno?.name || 'Unknown',
 				rates: rates,
@@ -276,6 +277,70 @@ class EnergyCompare extends utils.Adapter {
 			return masterData;
 		} catch (error) {
 			this.log.error(`Failed to fetch master data: ${error.message}`);
+			return null;
+		}
+	}
+
+	async fetchOctopusMeterReadings() {
+		try {
+			if (!this.masterData || !this.masterData.meterId) {
+				return null;
+			}
+
+			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
+			const currentYear = new Date().getFullYear();
+			const readFrom = `${currentYear}-01-01`;
+
+			const readingsPayload = {
+				query: `query MyQuery($accountNumber: String!, $meterId: ID!, $readFrom: Date!) {
+					electricityMeterReadings(
+						meterId: $meterId
+						accountNumber: $accountNumber
+						last: 100
+						readFrom: $readFrom
+					) {
+						edges {
+							node {
+								value
+								readAt
+								typeOfRead
+								status
+							}
+						}
+					}
+				}`,
+				variables: {
+					accountNumber: this.config.octopusAccount,
+					meterId: this.masterData.meterId,
+					readFrom: readFrom,
+				},
+			};
+
+			const dataRes = await axios.post(apiDomain, readingsPayload, {
+				headers: { 'Content-Type': 'application/json', Authorization: this.octopusAuthToken },
+				validateStatus: () => true,
+			});
+
+			if (dataRes.status !== 200 || !dataRes.data?.data?.electricityMeterReadings) {
+				return null;
+			}
+
+			const edges = dataRes.data.data.electricityMeterReadings.edges;
+			if (!edges || edges.length === 0) {
+				return null;
+			}
+
+			// Sort by readAt descending to find the latest
+			const readings = edges
+				.map(e => ({
+					value: parseFloat(e.node.value),
+					readAt: new Date(e.node.readAt),
+				}))
+				.sort((a, b) => b.readAt.getTime() - a.readAt.getTime());
+
+			return readings[0];
+		} catch (error) {
+			this.log.error(`Octopus meter readings fetch error: ${error.message}`);
 			return null;
 		}
 	}
@@ -638,6 +703,48 @@ class EnergyCompare extends utils.Adapter {
 
 			// Update JSONs
 			await this.updateHistoryJson();
+
+			// 3. Update meter reading
+			const lastOfficialReading = await this.fetchOctopusMeterReadings();
+			if (lastOfficialReading) {
+				this.log.debug(
+					`Latest official reading: ${lastOfficialReading.value} at ${lastOfficialReading.readAt}`,
+				);
+
+				let totalSinceLastReading = 0;
+				const objectsForSum = await this.getAdapterObjectsAsync();
+				const historyPrefixForSum = `${this.namespace}.history.`;
+
+				for (const id of Object.keys(objectsForSum)) {
+					if (id.startsWith(historyPrefixForSum)) {
+						const relativeId = id.substring(historyPrefixForSum.length);
+						const parts = relativeId.split('.');
+						// parts = [YYYY, MM, DD, 'octopus', 'dailyConsumption']
+						if (parts.length === 5 && parts[3] === 'octopus' && parts[4] === 'dailyConsumption') {
+							const year = parseInt(parts[0], 10);
+							const month = parseInt(parts[1], 10);
+							const day = parseInt(parts[2], 10);
+							const stateDate = new Date(year, month - 1, day);
+
+							// If the day is AFTER the official reading day
+							if (stateDate > lastOfficialReading.readAt) {
+								const consState = await this.getStateAsync(id);
+								if (consState && consState.val) {
+									totalSinceLastReading += Number(consState.val);
+								}
+							}
+						}
+					}
+				}
+
+				const calculatedReading = lastOfficialReading.value + totalSinceLastReading;
+				await this.writeStateObject(
+					'octopus.info.meterReading',
+					'Current Calculated Meter Reading',
+					parseFloat(calculatedReading.toFixed(3)),
+				);
+				this.log.info(`Updated calculated meter reading: ${calculatedReading.toFixed(3)} kWh`);
+			}
 		} catch (error) {
 			this.log.error(`Error during syncData: ${error.message}`);
 		}
