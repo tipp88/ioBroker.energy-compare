@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "news": {
+      "0.2.3": {
+        "en": "Updated adapter logo and icon.",
+        "de": "Aktualisiertes Adapter-Logo und Icon.",
+        "ru": "Обновленный адаптер логотипа и иконки.",
+        "pt": "Logotipo do adaptador atualizado e ícone.",
+        "nl": "Bijgewerkt adapter logo en pictogram.",
+        "fr": "Logo et icône de l'adaptateur mis à jour.",
+        "it": "Logo e icona dell'adattatore aggiornato.",
+        "es": "Actualizado logo e icono del adaptador.",
+        "pl": "Aktualizacja logo adaptera i ikona.",
+        "uk": "Оновлений логотип адаптера і іконка.",
+        "zh-cn": "更新适配器标识和图标."
+      },
       "0.2.2": {
         "en": "Renamed adapter to ioBroker.octopus-energy-monitor",
         "de": "Umbenannter Adapter zum ioBroker.octopus-Energiemonitor",
