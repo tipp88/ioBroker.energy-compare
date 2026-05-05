@@ -259,8 +259,6 @@ class EnergyCompare extends utils.Adapter {
 				];
 			}
 
-			this.log.debug(`Full Meter Object: ${JSON.stringify(malo.meters?.[0])}`);
-
 			const masterData = {
 				balance: account.electricityBalance ? parseFloat(account.electricityBalance) / 100 : 0,
 				propertyId: propertyId,
@@ -272,10 +270,6 @@ class EnergyCompare extends utils.Adapter {
 				dnoName: malo.dno?.name || 'Unknown',
 				rates: rates,
 			};
-
-			this.log.debug(
-				`Master data fetched. Meter ID: ${masterData.meterId}, Meter Number: ${masterData.meterNumber}`,
-			);
 
 			this.masterData = masterData;
 			await this.writeMasterDataStates(masterData);
@@ -290,15 +284,12 @@ class EnergyCompare extends utils.Adapter {
 	async fetchOctopusMeterReadings() {
 		try {
 			if (!this.masterData || !this.masterData.meterId) {
-				this.log.debug('fetchOctopusMeterReadings: Missing masterData or meterId');
 				return null;
 			}
 
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 			const currentYear = new Date().getFullYear();
 			const readFrom = `${currentYear}-01-01T00:00:00Z`;
-
-			this.log.debug(`Fetching meter readings for meter ${this.masterData.meterId} since ${readFrom}`);
 
 			const readingsPayload = {
 				query: `query MyQuery($accountNumber: String!, $meterId: ID!, $readFrom: DateTime!) {
@@ -339,7 +330,6 @@ class EnergyCompare extends utils.Adapter {
 
 			const edges = dataRes.data.data.electricityMeterReadings.edges;
 			if (!edges || edges.length === 0) {
-				this.log.debug('No meter readings found in the specified period.');
 				return null;
 			}
 
@@ -351,7 +341,6 @@ class EnergyCompare extends utils.Adapter {
 				}))
 				.sort((a, b) => b.readAt.getTime() - a.readAt.getTime());
 
-			this.log.debug(`Found ${readings.length} readings. Latest: ${readings[0].value} at ${readings[0].readAt}`);
 			return readings[0];
 		} catch (error) {
 			this.log.error(`Octopus meter readings fetch error: ${error.message}`);
@@ -721,10 +710,6 @@ class EnergyCompare extends utils.Adapter {
 			// 3. Update meter reading
 			const lastOfficialReading = await this.fetchOctopusMeterReadings();
 			if (lastOfficialReading) {
-				this.log.debug(
-					`Latest official reading: ${lastOfficialReading.value} at ${lastOfficialReading.readAt}`,
-				);
-
 				let totalSinceLastReading = 0;
 				const objectsForSum = await this.getAdapterObjectsAsync();
 				const historyPrefixForSum = `${this.namespace}.history.`;
