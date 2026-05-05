@@ -556,7 +556,6 @@ class EnergyCompare extends utils.Adapter {
 				result.total += consumption;
 			}
 
-			this.log.debug(`Inexogy fetch successful for ${meterId}: Total ${result.total} kWh`);
 			return result;
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
