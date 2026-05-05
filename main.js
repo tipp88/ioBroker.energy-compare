@@ -296,12 +296,12 @@ class EnergyCompare extends utils.Adapter {
 
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 			const currentYear = new Date().getFullYear();
-			const readFrom = `${currentYear}-01-01`;
+			const readFrom = `${currentYear}-01-01T00:00:00Z`;
 
 			this.log.debug(`Fetching meter readings for meter ${this.masterData.meterId} since ${readFrom}`);
 
 			const readingsPayload = {
-				query: `query MyQuery($accountNumber: String!, $meterId: ID!, $readFrom: Date!) {
+				query: `query MyQuery($accountNumber: String!, $meterId: ID!, $readFrom: DateTime!) {
 					electricityMeterReadings(
 						meterId: $meterId
 						accountNumber: $accountNumber
