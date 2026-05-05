@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "energy-compare",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "news": {
+      "0.2.1": {
+        "en": "Fixed adapter checker warnings and errors.",
+        "de": "Fixed Adapter Checker Warnungen und Fehler.",
+        "ru": "Фиксированный адаптер проверки предупреждений и ошибок.",
+        "pt": "Avisos e erros de verificação de adaptador fixos.",
+        "nl": "Fixed adapter controleer waarschuwingen en fouten.",
+        "fr": "Correction d'avertissements et d'erreurs d'adaptateur.",
+        "it": "Avvertenze e errori dell'adattatore fisso.",
+        "es": "Controlador de adaptador fijo advertencias y errores.",
+        "pl": "Naprawiono ostrzeżenia i błędy dotyczące sprawdzania adaptera.",
+        "uk": "Виправлені попередження та помилки адаптера.",
+        "zh-cn": "固定适配器检查器警告和错误."
+      },
       "0.2.0": {
         "en": "Added data retention setting and aggregated history JSON states.",
         "de": "Hinzugefügt Datenretention Einstellung und aggregierte Geschichte JSON Zustände.",
