@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "news": {
+      "0.4.1": {
+        "en": "Fixed missing meter ID in master data fetch.\nFixed GraphQL variable type for meter readings (Date vs DateTime).",
+        "de": "Behobene fehlende Zähler-ID im Master Data Fetch.\nFixed GraphQL Variablentyp für Messwerte (Date vs DateTime).",
+        "ru": "Идентификатор неисправного измерителя в мастер-приборе данных.\nФиксированный тип переменной GraphQL для показаний счетчика (Date vs DateTime).",
+        "pt": "Corrigido o ID do medidor em busca de dados mestre.\nTipo variável fixo do GraphQL para leituras do medidor (Data vs DataTime).",
+        "nl": "Vaste ontbrekende meter ID in hoofdgegevens ophalen.\nVaste GraphQL variabele type voor metermetingen (Date vs DateTime).",
+        "fr": "Correction de l'ID de compteur manquant dans la récupération de données maître.\nType variable fixe de GraphQL pour les relevés de compteurs (Date vs DateTime).",
+        "it": "ID del misuratore mancante fisso nel controllo dei dati master.\nTipo variabile GraphQL fisso per le letture dei contatori (Date vs DateTime).",
+        "es": "ID de medidor perdido fijo en la búsqueda de datos maestros.\nTipo variable GraphQL fijo para lecturas de medidores (Date vs DateTime).",
+        "pl": "Naprawiono brak identyfikatora miernika w głównym pobieraniu danych.\nNaprawiono typ zmiennej GraphQL dla odczytów mierników (Data vs DateTime).",
+        "uk": "Фіксований відсутній метровий ідентифікатор в майстерні даних fetch.\nФіксований GraphQL змінний тип для читальних метрів (Date vs DateTime).",
+        "zh-cn": "主数据获取中固定缺失的测量器ID .\n计量读取的固定图形QL变量类型(Date vs DateTime)."
+      },
       "0.4.0": {
         "en": "Implement estimated meter reading calculation based on official Kraken data.",
         "de": "Ergänzen Sie geschätzte Messwertberechnung basierend auf offiziellen Kraken-Daten.",
@@ -80,19 +93,6 @@
         "pl": "Zmieniono nazwę adaptera na joBroker.octopus- energy-monitor",
         "uk": "Перейменований адаптер для ioBroker.octopus-energy-monitor",
         "zh-cn": "重新命名为 ioBroker.octopus- 能量监视器的适配器"
-      },
-      "0.2.1": {
-        "en": "Fixed adapter checker warnings and errors.",
-        "de": "Fixed Adapter Checker Warnungen und Fehler.",
-        "ru": "Фиксированный адаптер проверки предупреждений и ошибок.",
-        "pt": "Avisos e erros de verificação de adaptador fixos.",
-        "nl": "Fixed adapter controleer waarschuwingen en fouten.",
-        "fr": "Correction d'avertissements et d'erreurs d'adaptateur.",
-        "it": "Avvertenze e errori dell'adattatore fisso.",
-        "es": "Controlador de adaptador fijo advertencias y errores.",
-        "pl": "Naprawiono ostrzeżenia i błędy dotyczące sprawdzania adaptera.",
-        "uk": "Виправлені попередження та помилки адаптера.",
-        "zh-cn": "固定适配器检查器警告和错误."
       }
     },
     "titleLang": {
