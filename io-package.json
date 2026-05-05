@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "news": {
+      "0.2.2": {
+        "en": "Renamed adapter to ioBroker.octopus-energy-monitor",
+        "de": "Umbenannter Adapter zum ioBroker.octopus-Energiemonitor",
+        "ru": "Переименован адаптер в ioBroker.octopus-energy-monitor",
+        "pt": "Adaptador renomeado para ioBroker.octopus-energy-monitor",
+        "nl": "Hernoemde adapter voor ioBroker.octopus-energy-monitor",
+        "fr": "Adaptateur renommé pour ioBroker.octopus-energy-monitor",
+        "it": "Adattatore rinominato a ioBroker.octopus-energy-monitor",
+        "es": "Adaptador renombrado a ioBroker.octopus-energía-monitor",
+        "pl": "Zmieniono nazwę adaptera na joBroker.octopus- energy-monitor",
+        "uk": "Перейменований адаптер для ioBroker.octopus-energy-monitor",
+        "zh-cn": "重新命名为 ioBroker.octopus- 能量监视器的适配器"
+      },
       "0.2.1": {
         "en": "Fixed adapter checker warnings and errors.",
         "de": "Fixed Adapter Checker Warnungen und Fehler.",
