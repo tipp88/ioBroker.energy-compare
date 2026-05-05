@@ -1,18 +1,18 @@
-![Logo](admin/energy-compare.png)
-# ioBroker.energy-compare
+![Logo](admin/octopus-energy-monitor.png)
+# ioBroker.octopus-energy-monitor
 
-[![NPM version](https://img.shields.io/npm/v/iobroker.energy-compare.svg)](https://www.npmjs.com/package/iobroker.energy-compare)
-[![Downloads](https://img.shields.io/npm/dm/iobroker.energy-compare.svg)](https://www.npmjs.com/package/iobroker.energy-compare)
-![Number of Installations](https://iobroker.live/badges/energy-compare-installed.svg)
-![Current version in stable repository](https://iobroker.live/badges/energy-compare-stable.svg)
+[![NPM version](https://img.shields.io/npm/v/iobroker.octopus-energy-monitor.svg)](https://www.npmjs.com/package/iobroker.octopus-energy-monitor)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.octopus-energy-monitor.svg)](https://www.npmjs.com/package/iobroker.octopus-energy-monitor)
+![Number of Installations](https://iobroker.live/badges/octopus-energy-monitor-installed.svg)
+![Current version in stable repository](https://iobroker.live/badges/octopus-energy-monitor-stable.svg)
 
-[![NPM](https://nodei.co/npm/iobroker.energy-compare.png?downloads=true)](https://nodei.co/npm/iobroker.energy-compare/)
+[![NPM](https://nodei.co/npm/iobroker.octopus-energy-monitor.png?downloads=true)](https://nodei.co/npm/iobroker.octopus-energy-monitor/)
 
-**Tests:** ![Test and Release](https://github.com/tipp88/ioBroker.energy-compare/workflows/Test%20and%20Release/badge.svg)
+**Tests:** ![Test and Release](https://github.com/tipp88/ioBroker.octopus-energy-monitor/workflows/Test%20and%20Release/badge.svg)
 
-## ioBroker.energy-compare
+## ioBroker.octopus-energy-monitor
 
-The **Energy Compare** adapter periodically fetches daily electricity consumption data from **Octopus Energy (Kraken API)** and **Inexogy (Discovergy/Statistics API)**, saving it automatically within your ioBroker object tree.
+The **Octopus Energy Monitor** adapter periodically fetches daily electricity consumption data from **Octopus Energy (Kraken API)** and **Inexogy (Discovergy/Statistics API)**, saving it automatically within your ioBroker object tree.
 
 Its key purpose is identifying discrepancies in billing/measurement between your intelligent smart meter (Inexogy) and your energy supplier (Octopus Energy). Every night, the adapter compares both datasets and flags daily discrepancies that exceed a configurable threshold mathematically.
 
@@ -33,7 +33,7 @@ To install this adapter seamlessly into your ioBroker environment:
 3. Navigate to **"Adapters"**.
 4. Click the GitHub / Custom URL icon ("Install from custom URL").
 5. Switch to the **Custom** tab and paste the raw GitHub repository URL:
-   `https://github.com/tipp88/ioBroker.energy-compare`
+   `https://github.com/tipp88/ioBroker.octopus-energy-monitor`
 6. Click install. Once downloaded, create a new instance (the little `+` button).
 
 ---
@@ -51,7 +51,7 @@ To install this adapter seamlessly into your ioBroker environment:
 3. **General Settings:**
    - **Discrepancy Threshold:** Defines how many `kWh` difference must be present between Octopus and Inexogy to trigger the `hasDiscrepancy: true` state flag. Default is `0.1 kWh`.
 
-Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `energy-compare.0.history` path.
+Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history` path.
 
 ## Changelog
 ### 0.2.1 (2026-05-05)

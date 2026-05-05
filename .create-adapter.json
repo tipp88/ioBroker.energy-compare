@@ -1,8 +1,8 @@
 {
 	"cli": true,
 	"target": "directory",
-	"adapterName": "energy-compare",
-	"title": "Energy Compare",
+	"adapterName": "octopus-energy-monitor",
+	"title": "Octopus Energy Monitor",
 	"description": "Compare Octopus Energy and Inexogy daily consumption",
 	"keywords": [
 		"octopus",

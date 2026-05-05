@@ -1,6 +1,6 @@
 {
   "common": {
-    "name": "energy-compare",
+    "name": "octopus-energy-monitor",
     "version": "0.2.1",
     "news": {
       "0.2.1": {
@@ -31,7 +31,7 @@
       }
     },
     "titleLang": {
-      "en": "Energy Compare",
+      "en": "Octopus Energy Monitor",
       "de": "Energievergleich",
       "ru": "Сравнение энергии",
       "pt": "Comparação de energia",
@@ -69,10 +69,10 @@
       "license": "MIT"
     },
     "platform": "Javascript/Node.js",
-    "icon": "energy-compare.png",
+    "icon": "octopus-energy-monitor.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.energy-compare/master/admin/energy-compare.png",
-    "readme": "https://github.com/tipp88/ioBroker.energy-compare/blob/master/README.md",
+    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.octopus-energy-monitor/master/admin/octopus-energy-monitor.png",
+    "readme": "https://github.com/tipp88/ioBroker.octopus-energy-monitor/blob/master/README.md",
     "loglevel": "info",
     "tier": 3,
     "mode": "daemon",

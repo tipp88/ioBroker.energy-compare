@@ -5,14 +5,14 @@ const cron = require('node-cron');
 
 class EnergyCompare extends utils.Adapter {
 	constructor(options) {
-		super({ ...options, name: 'energy-compare' });
+		super({ ...options, name: 'octopus-energy-monitor' });
 		this.on('ready', this.onReady.bind(this));
 		this.on('unload', this.onUnload.bind(this));
 		this.cronJob = null;
 	}
 
 	async onReady() {
-		this.log.info('Starting Energy Compare Adapter');
+		this.log.info('Starting Octopus Energy Monitor Adapter');
 
 		// Create Object Tree
 		await this.setupObjects();
@@ -570,7 +570,7 @@ class EnergyCompare extends utils.Adapter {
 
 		for (const id of Object.keys(objects)) {
 			if (id.startsWith(historyPrefix)) {
-				// ID format: energy-compare.0.history.YYYY-MM-DD...
+				// ID format: octopus-energy-monitor.0.history.YYYY-MM-DD...
 				const relativeId = id.substring(historyPrefix.length);
 				const datePart = relativeId.split('.')[0]; // YYYY-MM-DD
 
