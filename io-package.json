@@ -15,23 +15,6 @@
         "pl": "Dodano ustawienia retencji danych i zagregowane stany JSON.",
         "uk": "Додано налаштування збереження даних та узагальнену історію JSON.",
         "zh-cn": "添加数据保留设置和汇总历史JSON状态."
-      },
-      "0.1.0": {
-        "en": "Official release including 30-day retroactive API fetch and local caching",
-        "de": "Offizielles Release inklusive 30-Tage rückwirkendem API-Abruf und lokalem Caching"
-      },
-      "0.0.1": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
       }
     },
     "titleLang": {
@@ -75,8 +58,8 @@
     "platform": "Javascript/Node.js",
     "icon": "energy-compare.png",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.energy-compare/main/admin/energy-compare.png",
-    "readme": "https://github.com/tipp88/ioBroker.energy-compare/blob/main/README.md",
+    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.energy-compare/master/admin/energy-compare.png",
+    "readme": "https://github.com/tipp88/ioBroker.energy-compare/blob/master/README.md",
     "loglevel": "info",
     "tier": 3,
     "mode": "daemon",

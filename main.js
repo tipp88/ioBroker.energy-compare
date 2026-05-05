@@ -174,46 +174,99 @@ class EnergyCompare extends utils.Adapter {
 
 				if (this.config.splitGoTariff) {
 					// Split Write
-					await this.writeStateObject(`${basePath}.octopus.goConsumption`, 'Octopus Go Consumption', octopusData.go);
-					await this.writeStateObject(`${basePath}.octopus.standardConsumption`, 'Octopus Standard Consumption', octopusData.standard);
+					await this.writeStateObject(
+						`${basePath}.octopus.goConsumption`,
+						'Octopus Go Consumption',
+						octopusData.go,
+					);
+					await this.writeStateObject(
+						`${basePath}.octopus.standardConsumption`,
+						'Octopus Standard Consumption',
+						octopusData.standard,
+					);
 
 					if (inexogyData) {
-						await this.writeStateObject(`${basePath}.inexogy.goConsumption`, 'Inexogy Go Consumption', inexogyData.go);
-						await this.writeStateObject(`${basePath}.inexogy.standardConsumption`, 'Inexogy Standard Consumption', inexogyData.standard);
+						await this.writeStateObject(
+							`${basePath}.inexogy.goConsumption`,
+							'Inexogy Go Consumption',
+							inexogyData.go,
+						);
+						await this.writeStateObject(
+							`${basePath}.inexogy.standardConsumption`,
+							'Inexogy Standard Consumption',
+							inexogyData.standard,
+						);
 
 						const goDiff = Math.abs(octopusData.go - inexogyData.go);
 						const stdDiff = Math.abs(octopusData.standard - inexogyData.standard);
 
-						await this.writeStateObject(`${basePath}.comparison.goDifference`, 'Go Absolute Difference', parseFloat(goDiff.toFixed(3)), 'value');
-						await this.writeStateObject(`${basePath}.comparison.standardDifference`, 'Standard Absolute Difference', parseFloat(stdDiff.toFixed(3)), 'value');
+						await this.writeStateObject(
+							`${basePath}.comparison.goDifference`,
+							'Go Absolute Difference',
+							parseFloat(goDiff.toFixed(3)),
+							'value',
+						);
+						await this.writeStateObject(
+							`${basePath}.comparison.standardDifference`,
+							'Standard Absolute Difference',
+							parseFloat(stdDiff.toFixed(3)),
+							'value',
+						);
 
 						if (goDiff >= threshold || stdDiff >= threshold) {
-							this.log.warn(`Discrepancy detected for ${dateStr}! Go Diff: ${goDiff.toFixed(3)} kWh, Std Diff: ${stdDiff.toFixed(3)} kWh`);
+							this.log.warn(
+								`Discrepancy detected for ${dateStr}! Go Diff: ${goDiff.toFixed(3)} kWh, Std Diff: ${stdDiff.toFixed(3)} kWh`,
+							);
 						} else {
-							this.log.info(`Sync for ${dateStr} successful. Go Diff: ${goDiff.toFixed(3)}, Std Diff: ${stdDiff.toFixed(3)}`);
+							this.log.info(
+								`Sync for ${dateStr} successful. Go Diff: ${goDiff.toFixed(3)}, Std Diff: ${stdDiff.toFixed(3)}`,
+							);
 						}
 					} else {
-						this.log.info(`Sync for ${dateStr} successful (Octopus Only, Split). Go: ${octopusData.go}, Std: ${octopusData.standard}`);
+						this.log.info(
+							`Sync for ${dateStr} successful (Octopus Only, Split). Go: ${octopusData.go}, Std: ${octopusData.standard}`,
+						);
 					}
 				} else {
 					// Normal Write
-					await this.writeStateObject(`${basePath}.octopus.dailyConsumption`, 'Octopus Daily Consumption', octopusData.total);
+					await this.writeStateObject(
+						`${basePath}.octopus.dailyConsumption`,
+						'Octopus Daily Consumption',
+						octopusData.total,
+					);
 
 					if (inexogyData) {
-						await this.writeStateObject(`${basePath}.inexogy.dailyConsumption`, 'Inexogy Daily Consumption', inexogyData.total);
+						await this.writeStateObject(
+							`${basePath}.inexogy.dailyConsumption`,
+							'Inexogy Daily Consumption',
+							inexogyData.total,
+						);
 
 						const diff = Math.abs(octopusData.total - inexogyData.total);
 						const hasDiscrepancy = diff >= threshold;
 
-						await this.writeStateObject(`${basePath}.comparison.difference`, 'Absolute Difference', parseFloat(diff.toFixed(3)), 'value');
-						await this.writeStateObject(`${basePath}.comparison.hasDiscrepancy`, 'Has Discrepancy', hasDiscrepancy, 'indicator', 'boolean');
+						await this.writeStateObject(
+							`${basePath}.comparison.difference`,
+							'Absolute Difference',
+							parseFloat(diff.toFixed(3)),
+							'value',
+						);
+						await this.writeStateObject(
+							`${basePath}.comparison.hasDiscrepancy`,
+							'Has Discrepancy',
+							hasDiscrepancy,
+							'indicator',
+							'boolean',
+						);
 
 						if (hasDiscrepancy) {
 							this.log.warn(
 								`Discrepancy detected for ${dateStr}! Octopus: ${octopusData.total} kWh, Inexogy: ${inexogyData.total} kWh. Diff: ${diff.toFixed(3)} kWh`,
 							);
 						} else {
-							this.log.info(`Sync for ${dateStr} successful. No discrepancy. Diff: ${diff.toFixed(3)} kWh`);
+							this.log.info(
+								`Sync for ${dateStr} successful. No discrepancy. Diff: ${diff.toFixed(3)} kWh`,
+							);
 						}
 					} else {
 						this.log.info(`Sync for ${dateStr} successful (Octopus Only): ${octopusData.total} kWh`);
@@ -362,7 +415,9 @@ class EnergyCompare extends utils.Adapter {
 			const edges = dataRes.data?.data?.account?.property?.measurements?.edges;
 
 			if (edges && Array.isArray(edges) && edges.length > 0) {
-				this.log.debug(`Octopus: Processing ${edges.length} edges for ${dateString}. First unit: ${edges[0].node.unit}`);
+				this.log.debug(
+					`Octopus: Processing ${edges.length} edges for ${dateString}. First unit: ${edges[0].node.unit}`,
+				);
 				const startMs = start.getTime();
 				const endMs = start.getTime() + 24 * 60 * 60 * 1000;
 
@@ -387,10 +442,10 @@ class EnergyCompare extends utils.Adapter {
 					}
 				}
 				this.log.debug(`Octopus calculated: total=${total}, go=${go}, std=${standard}`);
-				return { 
-					total: parseFloat(total.toFixed(3)), 
-					go: parseFloat(go.toFixed(3)), 
-					standard: parseFloat(standard.toFixed(3)) 
+				return {
+					total: parseFloat(total.toFixed(3)),
+					go: parseFloat(go.toFixed(3)),
+					standard: parseFloat(standard.toFixed(3)),
 				};
 			}
 
@@ -470,28 +525,27 @@ class EnergyCompare extends utils.Adapter {
 					this.log.warn(`No Inexogy data returned. Status: ${dataRes.status}`);
 				}
 				return null;
-			} else {
-				const goEnd = new Date(start.getTime());
-				goEnd.setHours(5, 0, 0, 0);
-
-				const urlGo = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${goEnd.getTime()}`;
-				const resGo = await axios.get(urlGo, { headers, validateStatus: () => true });
-				const go = this.parseInexogyData(resGo);
-
-				const urlStd = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${goEnd.getTime()}&to=${end.getTime()}`;
-				const resStd = await axios.get(urlStd, { headers, validateStatus: () => true });
-				const standard = this.parseInexogyData(resStd);
-
-				if (go !== null && standard !== null) {
-					const total = parseFloat((go + standard).toFixed(3));
-					return { total, go, standard };
-				} else if (resGo.status === 401 || resGo.status === 403 || resStd.status === 401 || resStd.status === 403) {
-					this.log.error('Inexogy Authentication failed. Verify Email and Password.');
-				} else {
-					this.log.warn(`Inexogy data split fetch failed.`);
-				}
-				return null;
 			}
+			const goEnd = new Date(start.getTime());
+			goEnd.setHours(5, 0, 0, 0);
+
+			const urlGo = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${goEnd.getTime()}`;
+			const resGo = await axios.get(urlGo, { headers, validateStatus: () => true });
+			const go = this.parseInexogyData(resGo);
+
+			const urlStd = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${goEnd.getTime()}&to=${end.getTime()}`;
+			const resStd = await axios.get(urlStd, { headers, validateStatus: () => true });
+			const standard = this.parseInexogyData(resStd);
+
+			if (go !== null && standard !== null) {
+				const total = parseFloat((go + standard).toFixed(3));
+				return { total, go, standard };
+			} else if (resGo.status === 401 || resGo.status === 403 || resStd.status === 401 || resStd.status === 403) {
+				this.log.error('Inexogy Authentication failed. Verify Email and Password.');
+			} else {
+				this.log.warn(`Inexogy data split fetch failed.`);
+			}
+			return null;
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
 			return null;
@@ -537,7 +591,7 @@ class EnergyCompare extends utils.Adapter {
 		this.log.info('Updating history JSON arrays...');
 		const objects = await this.getAdapterObjectsAsync();
 		const historyPrefix = `${this.namespace}.history.`;
-		
+
 		const dates = new Set();
 		for (const id of Object.keys(objects)) {
 			if (id.startsWith(historyPrefix)) {
@@ -563,16 +617,17 @@ class EnergyCompare extends utils.Adapter {
 			const octStd = await this.getStateAsync(`${basePath}.octopus.standardConsumption`);
 			const octTotal = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
 
-			const octGoVal = (octGo && octGo.val != null) ? Number(octGo.val) : 0;
-			const octStdVal = (octStd && octStd.val != null) ? Number(octStd.val) : 0;
-			const octTotalVal = (octTotal && octTotal.val != null) ? Number(octTotal.val) : parseFloat((octGoVal + octStdVal).toFixed(3));
+			const octGoVal = octGo && octGo.val != null ? Number(octGo.val) : 0;
+			const octStdVal = octStd && octStd.val != null ? Number(octStd.val) : 0;
+			const octTotalVal =
+				octTotal && octTotal.val != null ? Number(octTotal.val) : parseFloat((octGoVal + octStdVal).toFixed(3));
 
 			octopusHistory.push({
 				date: dateStr,
 				timestamp: timestamp,
 				go: octGoVal,
 				standard: octStdVal,
-				total: octTotalVal
+				total: octTotalVal,
 			});
 
 			// Inexogy
@@ -581,16 +636,19 @@ class EnergyCompare extends utils.Adapter {
 				const inxStd = await this.getStateAsync(`${basePath}.inexogy.standardConsumption`);
 				const inxTotal = await this.getStateAsync(`${basePath}.inexogy.dailyConsumption`);
 
-				const inxGoVal = (inxGo && inxGo.val != null) ? Number(inxGo.val) : 0;
-				const inxStdVal = (inxStd && inxStd.val != null) ? Number(inxStd.val) : 0;
-				const inxTotalVal = (inxTotal && inxTotal.val != null) ? Number(inxTotal.val) : parseFloat((inxGoVal + inxStdVal).toFixed(3));
+				const inxGoVal = inxGo && inxGo.val != null ? Number(inxGo.val) : 0;
+				const inxStdVal = inxStd && inxStd.val != null ? Number(inxStd.val) : 0;
+				const inxTotalVal =
+					inxTotal && inxTotal.val != null
+						? Number(inxTotal.val)
+						: parseFloat((inxGoVal + inxStdVal).toFixed(3));
 
 				inexogyHistory.push({
 					date: dateStr,
 					timestamp: timestamp,
 					go: inxGoVal,
 					standard: inxStdVal,
-					total: inxTotalVal
+					total: inxTotalVal,
 				});
 			}
 		}
