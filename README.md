@@ -59,6 +59,8 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 
 ## Changelog
 ### **WORK IN PROGRESS**
+* (tipp88) Fixed missing meter ID in master data fetch.
+* (tipp88) Fixed GraphQL variable type for meter readings (Date vs DateTime).
 
 ### 0.4.0 (2026-05-05)
 * (tipp88) Implement estimated meter reading calculation based on official Kraken data.
