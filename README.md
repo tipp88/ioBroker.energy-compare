@@ -55,6 +55,7 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 
 ## Changelog
 ### **WORK IN PROGRESS**
+* (tipp88) Fixed adapter checker warnings and errors.
 
 ### 0.2.0 (2026-04-23)
 * (tipp88) Added data retention setting and aggregated history JSON states.
