@@ -271,6 +271,10 @@ class EnergyCompare extends utils.Adapter {
 				rates: rates,
 			};
 
+			this.log.debug(
+				`Master data fetched. Meter ID: ${masterData.meterId}, Meter Number: ${masterData.meterNumber}`,
+			);
+
 			this.masterData = masterData;
 			await this.writeMasterDataStates(masterData);
 			this.log.info('Octopus master data fetched and updated.');
@@ -284,12 +288,15 @@ class EnergyCompare extends utils.Adapter {
 	async fetchOctopusMeterReadings() {
 		try {
 			if (!this.masterData || !this.masterData.meterId) {
+				this.log.debug('fetchOctopusMeterReadings: Missing masterData or meterId');
 				return null;
 			}
 
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 			const currentYear = new Date().getFullYear();
 			const readFrom = `${currentYear}-01-01`;
+
+			this.log.debug(`Fetching meter readings for meter ${this.masterData.meterId} since ${readFrom}`);
 
 			const readingsPayload = {
 				query: `query MyQuery($accountNumber: String!, $meterId: ID!, $readFrom: Date!) {
@@ -322,11 +329,15 @@ class EnergyCompare extends utils.Adapter {
 			});
 
 			if (dataRes.status !== 200 || !dataRes.data?.data?.electricityMeterReadings) {
+				this.log.warn(
+					`Octopus readings API returned status ${dataRes.status}: ${JSON.stringify(dataRes.data)}`,
+				);
 				return null;
 			}
 
 			const edges = dataRes.data.data.electricityMeterReadings.edges;
 			if (!edges || edges.length === 0) {
+				this.log.debug('No meter readings found in the specified period.');
 				return null;
 			}
 
@@ -338,6 +349,7 @@ class EnergyCompare extends utils.Adapter {
 				}))
 				.sort((a, b) => b.readAt.getTime() - a.readAt.getTime());
 
+			this.log.debug(`Found ${readings.length} readings. Latest: ${readings[0].value} at ${readings[0].readAt}`);
 			return readings[0];
 		} catch (error) {
 			this.log.error(`Octopus meter readings fetch error: ${error.message}`);
