@@ -17,10 +17,14 @@ The **Octopus Energy Monitor** adapter periodically fetches daily electricity co
 Its key purpose is identifying discrepancies in billing/measurement between your intelligent smart meter (Inexogy) and your energy supplier (Octopus Energy). Every night, the adapter compares both datasets and flags daily discrepancies that exceed a configurable threshold mathematically.
 
 ### 🌟 Features
-* **Full Kraken GraphQL Support:** Authenticates via your Octopus JWT tokens and dynamically resolves your Home Property ID to download daily smart meter consumption edges.
-* **Inexogy Differential Statistics:** Leverages Discovergys modern Statistics endpoint to accurately extrapolate exact 24-h chunks minimizing trailing comma discrepancies.
-* **30-Day Zero Load Caching:** Upon startup (or daily execution via Cron at 02:00 AM), the adapter retroactively reviews the past 30 days. To strictly minimize heavy API loads, the adapter queries its own ioBroker cache first — it only fires external web requests for days that are actively missing from your history tree.
-* **Dynamic IO-Trees:** Automatically structures all datasets by real dates under the `history.YYYY-MM-DD` parent tree.
+* **Full Kraken GraphQL Support:** Authenticates via your Octopus JWT tokens and dynamically resolves account properties to fetch precise consumption data.
+* **Dynamic Tariff & Slot Support:** Automatically detects your active Octopus tariff (e.g., Intelligent Octopus Go) and its specific time-of-use slots. No manual configuration of "Go" hours needed!
+* **Automated Cost Calculation:** Automatically calculates daily, monthly, and yearly energy costs in **Euro (€)** based on your actual tariff rates.
+* **Hierarchical History:** Structures data in a clean `history.YYYY.MM.DD` tree with automatic aggregation of consumption and costs for months and years.
+* **Estimated Meter Reading:** Calculates your current electricity meter reading by combining the latest official Kraken reading with your subsequent daily consumptions.
+* **Inexogy (Discovergy) Comparison:** Leverages the Inexogy API to compare consumption data against your provider's data, helping identify billing discrepancies.
+* **Master Data Insight:** Provides transparency into your account balance, meter details, and involved network operators (MOP/DNO).
+* **Smart Caching:** Minimizes API load by retroactively syncing only missing data points (30-day default).
 
 ---
 
@@ -51,7 +55,7 @@ To install this adapter seamlessly into your ioBroker environment:
 3. **General Settings:**
    - **Discrepancy Threshold:** Defines how many `kWh` difference must be present between Octopus and Inexogy to trigger the `hasDiscrepancy: true` state flag. Default is `0.1 kWh`.
 
-Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history` path.
+Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history.YYYY.MM.DD` path.
 
 ## Changelog
 ### **WORK IN PROGRESS**
