@@ -259,6 +259,8 @@ class EnergyCompare extends utils.Adapter {
 				];
 			}
 
+			this.log.debug(`Full Meter Object: ${JSON.stringify(malo.meters?.[0])}`);
+
 			const masterData = {
 				balance: account.electricityBalance ? parseFloat(account.electricityBalance) / 100 : 0,
 				propertyId: propertyId,
