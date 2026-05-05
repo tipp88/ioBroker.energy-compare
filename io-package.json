@@ -82,9 +82,9 @@
       "license": "MIT"
     },
     "platform": "Javascript/Node.js",
-    "icon": "octopus-energy-monitor.png",
+    "icon": "octopus-energy-monitor.svg",
     "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.octopus-energy-monitor/master/admin/octopus-energy-monitor.png",
+    "extIcon": "https://raw.githubusercontent.com/tipp88/ioBroker.octopus-energy-monitor/master/admin/octopus-energy-monitor.svg",
     "readme": "https://github.com/tipp88/ioBroker.octopus-energy-monitor/blob/master/README.md",
     "loglevel": "info",
     "tier": 3,

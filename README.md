@@ -1,4 +1,4 @@
-![Logo](admin/octopus-energy-monitor.png?v=2)
+![Logo](admin/octopus-energy-monitor.svg?v=3)
 # ioBroker.octopus-energy-monitor
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.octopus-energy-monitor.svg)](https://www.npmjs.com/package/iobroker.octopus-energy-monitor)
