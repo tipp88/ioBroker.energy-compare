@@ -9,50 +9,72 @@ class EnergyCompare extends utils.Adapter {
 		this.on('ready', this.onReady.bind(this));
 		this.on('unload', this.onUnload.bind(this));
 		this.cronJob = null;
+		this.masterData = null;
+		this.octopusAuthToken = null;
+		this.inexogyMeterId = null;
 	}
 
 	async onReady() {
 		this.log.info('Starting Octopus Energy Monitor Adapter');
 
-		// Create Object Tree
-		await this.setupObjects();
-
 		this.hasOctopus = !!(this.config.octopusEmail && this.config.octopusPassword);
 		this.hasInexogy = !!(this.config.inexogyEmail && this.config.inexogyPassword);
 
-		// Validate config
 		if (!this.hasOctopus) {
 			this.log.warn('Octopus credentials missing. Adapter requires at least Octopus credentials.');
-			return; // Wait for config
+			return;
 		}
 
 		if (!this.hasInexogy) {
 			this.log.info('Inexogy credentials missing. Adapter will run in standalone mode (Octopus only).');
 		}
 
+		await this.cleanupLegacyHistory();
+		await this.setupObjects();
+
 		const schedule = this.config.cronSchedule || '0 2 * * *';
 		this.log.info(`Scheduling daily sync with CRON: ${schedule}`);
 
-		// Schedule the job
 		this.cronJob = cron.schedule(schedule, () => {
 			this.syncData();
 		});
 
-		// Trigger an initial sync 5 seconds after startup for immediate feedback
 		setTimeout(() => this.syncData(), 5000);
 	}
 
+	async cleanupLegacyHistory() {
+		this.log.debug('Checking for legacy history.YYYY-MM-DD objects...');
+		const objects = await this.getAdapterObjectsAsync();
+		const historyPrefix = `${this.namespace}.history.`;
+		for (const id of Object.keys(objects)) {
+			if (id.startsWith(historyPrefix)) {
+				const relativeId = id.substring(historyPrefix.length);
+				const datePart = relativeId.split('.')[0];
+				if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+					this.log.info(`Deleting legacy history object: ${id}`);
+					await this.delObjectAsync(id.substring(this.namespace.length + 1));
+				}
+			}
+		}
+	}
+
 	async setupObjects() {
-		// Create the root history device/folder
 		await this.setObjectNotExistsAsync('history', {
 			type: 'device',
-			common: {
-				name: 'Daily History',
-			},
+			common: { name: 'Energy History' },
+			native: {},
+		});
+		await this.setObjectNotExistsAsync('octopus.info', {
+			type: 'channel',
+			common: { name: 'Octopus Master Data' },
+			native: {},
+		});
+		await this.setObjectNotExistsAsync('octopus.currentMonth', {
+			type: 'channel',
+			common: { name: 'Current Month Aggregation' },
 			native: {},
 		});
 
-		// Create provider summary states
 		await this.setObjectNotExistsAsync('octopus.historyJson', {
 			type: 'state',
 			common: {
@@ -86,283 +108,179 @@ class EnergyCompare extends utils.Adapter {
 	 * @param {any} value
 	 * @param {string} [role]
 	 * @param {ioBroker.CommonType} [type]
+	 * @param {string} [unit]
 	 */
-	async writeStateObject(id, name, value, role = 'value.power.consumption', type = 'number') {
+	async writeStateObject(id, name, value, role = 'value', type = 'number', unit = '') {
+		if (!unit) {
+			if (role.includes('power') || name.includes('Consumption') || name.includes('Difference')) unit = 'kWh';
+			else if (name.includes('Cost') || name.includes('Balance')) unit = '€';
+		}
 		await this.setObjectNotExistsAsync(id, {
 			type: 'state',
-			common: {
-				name: name,
-				type: type,
-				role: role,
-				unit: role.includes('power') || name.includes('Difference') ? 'kWh' : '',
-				read: true,
-				write: false,
-			},
+			common: { name, type, role, unit, read: true, write: false },
 			native: {},
 		});
 		await this.setStateAsync(id, { val: value, ack: true });
 	}
 
-	async syncData() {
-		const syncDays = Number(this.config.syncDays) || 30;
-		this.log.info(`Starting ${syncDays}-day retroactive data sync...`);
+	async writeMasterDataStates(data) {
+		await this.writeStateObject('octopus.info.balance', 'Account Balance', data.balance, 'value', 'number', '€');
+		await this.writeStateObject('octopus.info.tariffName', 'Tariff Name', data.tariffName, 'text', 'string');
+		await this.writeStateObject(
+			'octopus.info.isTimeOfUse',
+			'Is Time Of Use Tariff',
+			data.isTimeOfUse,
+			'indicator',
+			'boolean',
+		);
+		await this.writeStateObject('octopus.info.meterNumber', 'Meter Number', data.meterNumber, 'text', 'string');
+		await this.writeStateObject('octopus.info.mopName', 'Metering Point Operator', data.mopName, 'text', 'string');
+		await this.writeStateObject(
+			'octopus.info.dnoName',
+			'Distribution Network Operator',
+			data.dnoName,
+			'text',
+			'string',
+		);
 
-		// Start with cleanup
-		await this.cleanupHistory();
-
-		try {
-			for (let i = syncDays; i >= 1; i--) {
-				const targetDate = new Date();
-				targetDate.setDate(targetDate.getDate() - i);
-				targetDate.setHours(0, 0, 0, 0);
-
-				const endDate = new Date();
-				endDate.setDate(endDate.getDate() - i + 1);
-				endDate.setHours(0, 0, 0, 0);
-
-				const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-				const basePath = `history.${dateStr}`;
-
-				// Cache Check: Determine if the sync for this day has already been completed successfully
-				let isCached = false;
-				if (this.hasInexogy) {
-					if (this.config.splitGoTariff) {
-						const diffState = await this.getStateAsync(`${basePath}.comparison.standardDifference`);
-						isCached = !!(diffState && diffState.val !== null && diffState.val !== undefined);
-					} else {
-						const diffState = await this.getStateAsync(`${basePath}.comparison.difference`);
-						isCached = !!(diffState && diffState.val !== null && diffState.val !== undefined);
-					}
-				} else {
-					if (this.config.splitGoTariff) {
-						const octState = await this.getStateAsync(`${basePath}.octopus.standardConsumption`);
-						isCached = !!(octState && octState.val !== null && octState.val !== undefined);
-					} else {
-						const octState = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
-						isCached = !!(octState && octState.val !== null && octState.val !== undefined);
-					}
-				}
-
-				if (isCached) {
-					this.log.debug(`Skipping ${dateStr}, data already synced and cached.`);
-					continue;
-				}
-
-				this.log.debug(`Syncing data for ${dateStr}...`);
-
-				// Build the day's object structure dynamically
-				await this.setObjectNotExistsAsync(basePath, {
-					type: 'channel',
-					common: { name: `Data for ${dateStr}` },
-					native: {},
-				});
-
-				// Fetch data for the specific day
-				const octopusData = await this.fetchOctopus(targetDate, endDate, this.config.splitGoTariff);
-				let inexogyData = null;
-				if (this.hasInexogy) {
-					inexogyData = await this.fetchInexogy(targetDate, endDate, this.config.splitGoTariff);
-				}
-
-				// Check data fetching success
-				if (octopusData === null || (this.hasInexogy && inexogyData === null)) {
-					this.log.warn(`Skipping ${dateStr} due to missing provider data.`);
-					continue;
-				}
-
-				const threshold = Number(this.config.discrepancyThreshold) || 0.1;
-
-				if (this.config.splitGoTariff) {
-					// Split Write
-					await this.writeStateObject(
-						`${basePath}.octopus.goConsumption`,
-						'Octopus Go Consumption',
-						octopusData.go,
-					);
-					await this.writeStateObject(
-						`${basePath}.octopus.standardConsumption`,
-						'Octopus Standard Consumption',
-						octopusData.standard,
-					);
-
-					if (inexogyData) {
-						await this.writeStateObject(
-							`${basePath}.inexogy.goConsumption`,
-							'Inexogy Go Consumption',
-							inexogyData.go,
-						);
-						await this.writeStateObject(
-							`${basePath}.inexogy.standardConsumption`,
-							'Inexogy Standard Consumption',
-							inexogyData.standard,
-						);
-
-						const goDiff = Math.abs(octopusData.go - inexogyData.go);
-						const stdDiff = Math.abs(octopusData.standard - inexogyData.standard);
-
-						await this.writeStateObject(
-							`${basePath}.comparison.goDifference`,
-							'Go Absolute Difference',
-							parseFloat(goDiff.toFixed(3)),
-							'value',
-						);
-						await this.writeStateObject(
-							`${basePath}.comparison.standardDifference`,
-							'Standard Absolute Difference',
-							parseFloat(stdDiff.toFixed(3)),
-							'value',
-						);
-
-						if (goDiff >= threshold || stdDiff >= threshold) {
-							this.log.warn(
-								`Discrepancy detected for ${dateStr}! Go Diff: ${goDiff.toFixed(3)} kWh, Std Diff: ${stdDiff.toFixed(3)} kWh`,
-							);
-						} else {
-							this.log.info(
-								`Sync for ${dateStr} successful. Go Diff: ${goDiff.toFixed(3)}, Std Diff: ${stdDiff.toFixed(3)}`,
-							);
-						}
-					} else {
-						this.log.info(
-							`Sync for ${dateStr} successful (Octopus Only, Split). Go: ${octopusData.go}, Std: ${octopusData.standard}`,
-						);
-					}
-				} else {
-					// Normal Write
-					await this.writeStateObject(
-						`${basePath}.octopus.dailyConsumption`,
-						'Octopus Daily Consumption',
-						octopusData.total,
-					);
-
-					if (inexogyData) {
-						await this.writeStateObject(
-							`${basePath}.inexogy.dailyConsumption`,
-							'Inexogy Daily Consumption',
-							inexogyData.total,
-						);
-
-						const diff = Math.abs(octopusData.total - inexogyData.total);
-						const hasDiscrepancy = diff >= threshold;
-
-						await this.writeStateObject(
-							`${basePath}.comparison.difference`,
-							'Absolute Difference',
-							parseFloat(diff.toFixed(3)),
-							'value',
-						);
-						await this.writeStateObject(
-							`${basePath}.comparison.hasDiscrepancy`,
-							'Has Discrepancy',
-							hasDiscrepancy,
-							'indicator',
-							'boolean',
-						);
-
-						if (hasDiscrepancy) {
-							this.log.warn(
-								`Discrepancy detected for ${dateStr}! Octopus: ${octopusData.total} kWh, Inexogy: ${inexogyData.total} kWh. Diff: ${diff.toFixed(3)} kWh`,
-							);
-						} else {
-							this.log.info(
-								`Sync for ${dateStr} successful. No discrepancy. Diff: ${diff.toFixed(3)} kWh`,
-							);
-						}
-					} else {
-						this.log.info(`Sync for ${dateStr} successful (Octopus Only): ${octopusData.total} kWh`);
-					}
-				}
-			}
-
-			this.log.info(`${syncDays}-day sync cycle completed successfully.`);
-
-			// After sync loop, update the aggregate JSON states
-			await this.updateHistoryJson();
-		} catch (error) {
-			this.log.error(`Error during syncData: ${error.message}`);
+		for (const rate of data.rates) {
+			await this.writeStateObject(
+				`octopus.info.rates.${rate.name.toLowerCase()}`,
+				`Rate ${rate.name} (€/kWh)`,
+				parseFloat(rate.rateEuros.toFixed(4)),
+				'value',
+				'number',
+				'€/kWh',
+			);
 		}
 	}
 
-	async fetchOctopus(start, _end, split) {
+	async fetchOctopusMasterData() {
 		try {
 			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 
-			// 1. Authenticate with Kraken GraphQL (Cached)
 			if (!this.octopusAuthToken) {
-				this.log.debug(`Authenticating with Kraken (Octopus) for ${this.config.octopusEmail}`);
 				const authPayload = {
 					query: `mutation obtainKrakenToken($input: ObtainJSONWebTokenInput!) {
-						obtainKrakenToken(input: $input) {
-							token
-						}
+						obtainKrakenToken(input: $input) { token }
 					}`,
-					variables: {
-						input: {
-							email: this.config.octopusEmail,
-							password: this.config.octopusPassword,
-						},
-					},
+					variables: { input: { email: this.config.octopusEmail, password: this.config.octopusPassword } },
 				};
-
 				const authRes = await axios.post(apiDomain, authPayload, {
 					headers: { 'Content-Type': 'application/json' },
 				});
-
 				const token = authRes.data?.data?.obtainKrakenToken?.token;
-				if (!token) {
-					this.log.error('Octopus Login failed. No token received.');
-					this.log.debug(JSON.stringify(authRes.data));
-					return null;
-				}
+				if (!token) throw new Error('Octopus Login failed.');
 				this.octopusAuthToken = token;
 			}
 
-			// 2. Query Property ID (if not provided in config or cached)
-			let propertyId = this.config.octopusPropertyId || '';
-
-			if (!propertyId) {
-				if (!this.octopusDynamicPropertyId) {
-					this.log.debug('Kraken token received. Fetching property ID dynamically...');
-					const propertyPayload = {
-						query: `query getPropertyIds($accountNumber: String!) {
-							account(accountNumber: $accountNumber) {
-								properties {
-									id
+			const masterDataPayload = {
+				query: `query MyQuery($accountNumber: String!) {
+					account(accountNumber: $accountNumber) {
+						properties {
+							id
+							electricityMalos {
+								agreements {
+									isActive
+									product { displayName isTimeOfUse fullName }
+									unitRateInformation {
+										... on SimpleProductUnitRateInformation {
+											__typename latestGrossUnitRateCentsPerKwh
+										}
+										... on TimeOfUseProductUnitRateInformation {
+											__typename
+											rates {
+												latestGrossUnitRateCentsPerKwh
+												timeslotName
+												timeslotActivationRules { activeFromTime activeToTime }
+											}
+										}
+									}
 								}
+								meters { number }
+								mop { name }
+								dno { name }
 							}
-						}`,
-						variables: {
-							accountNumber: this.config.octopusAccount,
-						},
-					};
-
-					const propRes = await axios.post(apiDomain, propertyPayload, {
-						headers: {
-							'Content-Type': 'application/json',
-							Authorization: this.octopusAuthToken,
-						},
-						validateStatus: () => true,
-					});
-
-					if (propRes.status !== 200 || propRes.data?.errors) {
-						this.log.error(`Octopus property fetch failed: ${JSON.stringify(propRes.data)}`);
-						return null;
+						}
+						electricityBalance
 					}
+				}`,
+				variables: { accountNumber: this.config.octopusAccount },
+			};
 
-					const propertiesList = propRes.data?.data?.account?.properties;
-					if (!propertiesList || propertiesList.length === 0) {
-						this.log.error('Could not find any properties in Kraken response.');
-						return null;
-					}
+			const dataRes = await axios.post(apiDomain, masterDataPayload, {
+				headers: { 'Content-Type': 'application/json', Authorization: this.octopusAuthToken },
+				validateStatus: () => true,
+			});
 
-					this.octopusDynamicPropertyId = propertiesList[0].id;
-				}
-				propertyId = this.octopusDynamicPropertyId;
+			if (dataRes.status !== 200 || !dataRes.data?.data?.account) {
+				throw new Error('Master data fetch failed');
 			}
 
-			// 3. Query Consumption
-			this.log.debug(`Fetcing consumption for property: ${propertyId}`);
-			// Format date as YYYY-MM-DD
+			const account = dataRes.data.data.account;
+			const properties = account.properties || [];
+			if (properties.length === 0) throw new Error('No properties found');
+
+			const prop = properties[0];
+			const propertyId = prop.id;
+			const malo = prop.electricityMalos?.[0];
+			if (!malo) throw new Error('No electricityMalos found');
+
+			const activeAgreement = malo.agreements?.find(a => a.isActive);
+			if (!activeAgreement) throw new Error('No active agreement found');
+
+			let rates = [];
+			if (activeAgreement.unitRateInformation.__typename === 'TimeOfUseProductUnitRateInformation') {
+				rates = activeAgreement.unitRateInformation.rates.map(r => ({
+					name: r.timeslotName,
+					rateEuros: parseFloat(r.latestGrossUnitRateCentsPerKwh) / 100,
+					from: r.timeslotActivationRules[0]?.activeFromTime,
+					to: r.timeslotActivationRules[0]?.activeToTime,
+				}));
+			} else {
+				rates = [
+					{
+						name: 'STANDARD',
+						rateEuros: parseFloat(activeAgreement.unitRateInformation.latestGrossUnitRateCentsPerKwh) / 100,
+						from: '00:00:00',
+						to: '24:00:00',
+					},
+				];
+			}
+
+			const masterData = {
+				balance: account.electricityBalance ? parseFloat(account.electricityBalance) / 100 : 0,
+				propertyId: propertyId,
+				tariffName: activeAgreement.product?.displayName || 'Unknown',
+				isTimeOfUse: activeAgreement.product?.isTimeOfUse || false,
+				meterNumber: malo.meters?.[0]?.number || 'Unknown',
+				mopName: malo.mop?.name || 'Unknown',
+				dnoName: malo.dno?.name || 'Unknown',
+				rates: rates,
+			};
+
+			this.masterData = masterData;
+			await this.writeMasterDataStates(masterData);
+			this.log.info('Octopus master data fetched and updated.');
+			return masterData;
+		} catch (error) {
+			this.log.error(`Failed to fetch master data: ${error.message}`);
+			return null;
+		}
+	}
+
+	timeStrToHours(timeStr) {
+		if (!timeStr) return 0;
+		const parts = timeStr.split(':');
+		return parseInt(parts[0], 10) + parseInt(parts[1] || 0, 10) / 60;
+	}
+
+	async fetchOctopus(start, end) {
+		try {
+			if (!this.masterData) return null;
+			const isSplit = this.masterData.isTimeOfUse && this.masterData.rates.length > 1;
+
+			const apiDomain = 'https://api.oeg-kraken.energy/v1/graphql/';
 			const dateString = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
 
 			const usagePayload = {
@@ -370,88 +288,87 @@ class EnergyCompare extends utils.Adapter {
 					account(accountNumber: $accountNumber) {
 						property(id: $propertyId) {
 							measurements(
-								utilityFilters: {electricityFilters: {readingFrequencyType: ${split ? 'RAW_INTERVAL' : 'DAY_INTERVAL'}, readingQuality: ACTUAL}}
+								utilityFilters: {electricityFilters: {readingFrequencyType: ${isSplit ? 'RAW_INTERVAL' : 'DAY_INTERVAL'}, readingQuality: ACTUAL}}
 								startOn: $date
-								first: ${split ? 150 : 1}
+								first: ${isSplit ? 150 : 1}
 							) {
-								edges {
-									node {
-										... on IntervalMeasurementType {
-											endAt
-											startAt
-											unit
-											value
-										}
-									}
-								}
+								edges { node { ... on IntervalMeasurementType { endAt startAt value } } }
 							}
 						}
 					}
 				}`,
 				variables: {
 					accountNumber: this.config.octopusAccount,
-					propertyId: propertyId,
+					propertyId: this.masterData.propertyId,
 					date: dateString,
 				},
 			};
 
 			const dataRes = await axios.post(apiDomain, usagePayload, {
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: this.octopusAuthToken,
-				},
+				headers: { 'Content-Type': 'application/json', Authorization: this.octopusAuthToken },
 				validateStatus: () => true,
 			});
 
-			if (dataRes.status !== 200 || dataRes.data?.errors) {
-				this.log.error(`Octopus consumption fetch failed: ${JSON.stringify(dataRes.data)}`);
-				return null;
+			if (dataRes.status !== 200 || !dataRes.data?.data?.account) return null;
+
+			const edges = dataRes.data.data.account.property?.measurements?.edges;
+			if (!edges || edges.length === 0) return null;
+
+			const startMs = start.getTime();
+			const endMs = start.getTime() + 24 * 60 * 60 * 1000;
+
+			let result = { total: 0, slots: {} };
+			for (const r of this.masterData.rates) {
+				result.slots[r.name] = { consumption: 0, cost: 0, rateEuros: r.rateEuros };
 			}
 
-			// 4. Extract Data
-			let total = 0;
-			let go = 0;
-			let standard = 0;
-			const edges = dataRes.data?.data?.account?.property?.measurements?.edges;
+			for (const edge of edges) {
+				const nodeVal = parseFloat(edge.node?.value || 0);
+				const startDt = new Date(edge.node.startAt);
+				const nodeMs = startDt.getTime();
 
-			if (edges && Array.isArray(edges) && edges.length > 0) {
-				this.log.debug(
-					`Octopus: Processing ${edges.length} edges for ${dateString}. First unit: ${edges[0].node.unit}`,
-				);
-				const startMs = start.getTime();
-				const endMs = start.getTime() + 24 * 60 * 60 * 1000;
+				if (nodeMs < startMs || nodeMs >= endMs) continue;
 
-				for (const edge of edges) {
-					const nodeVal = parseFloat(edge.node?.value || 0);
-					const startDt = new Date(edge.node.startAt);
-					const nodeMs = startDt.getTime();
+				result.total += nodeVal;
 
-					// Strict Date Check: only sum values that belong to the target 24h window
-					if (nodeMs < startMs || nodeMs >= endMs) {
-						continue;
-					}
+				if (isSplit) {
+					const nodeHour = startDt.getHours() + startDt.getMinutes() / 60;
+					let slotted = false;
+					for (const rate of this.masterData.rates) {
+						const fromH = this.timeStrToHours(rate.from);
+						const toH = this.timeStrToHours(rate.to) || 24;
 
-					total += nodeVal;
-
-					if (split) {
-						if (startDt.getHours() < 5) {
-							go += nodeVal;
+						let inSlot = false;
+						if (fromH < toH) {
+							inSlot = nodeHour >= fromH && nodeHour < toH;
 						} else {
-							standard += nodeVal;
+							// wraps around midnight, e.g. 23:00 to 05:00
+							inSlot = nodeHour >= fromH || nodeHour < toH;
+						}
+
+						if (inSlot) {
+							result.slots[rate.name].consumption += nodeVal;
+							slotted = true;
+							break;
 						}
 					}
+					// fallback to first slot if not matched
+					if (!slotted && this.masterData.rates.length > 0) {
+						result.slots[this.masterData.rates[0].name].consumption += nodeVal;
+					}
+				} else {
+					result.slots[this.masterData.rates[0].name].consumption += nodeVal;
 				}
-				this.log.debug(`Octopus calculated: total=${total}, go=${go}, std=${standard}`);
-				return {
-					total: parseFloat(total.toFixed(3)),
-					go: parseFloat(go.toFixed(3)),
-					standard: parseFloat(standard.toFixed(3)),
-				};
 			}
 
-			this.log.warn('Could not parse electricity readings from Kraken response.');
-			this.log.debug(JSON.stringify(dataRes.data));
-			return null;
+			let totalCost = 0;
+			for (const key of Object.keys(result.slots)) {
+				result.slots[key].cost = result.slots[key].consumption * result.slots[key].rateEuros;
+				totalCost += result.slots[key].cost;
+			}
+			result.totalCost = totalCost;
+
+			return result;
 		} catch (error) {
 			this.log.error(`Octopus fetch error: ${error.message}`);
 			return null;
@@ -460,131 +377,333 @@ class EnergyCompare extends utils.Adapter {
 
 	parseInexogyData(dataRes) {
 		if (dataRes.status === 200 && dataRes.data && dataRes.data.energy) {
-			const energyData = dataRes.data.energy;
-			const min = energyData.minimum || 0;
-			const max = energyData.maximum || 0;
-			const diffWh = Math.abs(max - min);
-
+			const diffWh = Math.abs((dataRes.data.energy.maximum || 0) - (dataRes.data.energy.minimum || 0));
 			let kwh = diffWh / 10000000000;
-			if (diffWh > 0 && diffWh < 100000) {
-				kwh = diffWh / 1000;
-			}
-
+			if (diffWh > 0 && diffWh < 100000) kwh = diffWh / 1000;
 			return parseFloat(kwh.toFixed(3));
 		}
 		return null;
 	}
 
-	async fetchInexogy(start, end, split) {
+	async fetchInexogy(start, end) {
 		try {
-			this.log.debug(`Authenticating with Inexogy for ${this.config.inexogyEmail}`);
-			// Note: Inexogy (Discovergy) uses its OAuth or fallback Basic Auth
+			if (!this.masterData) return null;
+			const isSplit = this.masterData.isTimeOfUse && this.masterData.rates.length > 1;
 			const basicAuth = Buffer.from(`${this.config.inexogyEmail}:${this.config.inexogyPassword}`).toString(
 				'base64',
 			);
 
-			// 1. Fetch meters to get the meterId (Cached)
 			if (!this.inexogyMeterId) {
-				this.log.debug(`Authenticating with Inexogy for ${this.config.inexogyEmail}`);
-				const meterUrl = 'https://api.inexogy.com/public/v1/meters';
-				this.log.debug(`Fetching meters: ${meterUrl}`);
-				const meterRes = await axios.get(meterUrl, {
+				const meterRes = await axios.get('https://api.inexogy.com/public/v1/meters', {
 					headers: { Authorization: `Basic ${basicAuth}` },
 					validateStatus: () => true,
 				});
-
-				if (meterRes.status !== 200 || !meterRes.data || meterRes.data.length === 0) {
-					if (meterRes.status === 401 || meterRes.status === 403) {
-						this.log.error('Inexogy Authentication failed. Verify Email and Password.');
-					} else {
-						this.log.error(`Inexogy meters fetch failed. Status: ${meterRes.status}`);
-					}
-					return null;
-				}
-
+				if (meterRes.status !== 200 || !meterRes.data || meterRes.data.length === 0) return null;
 				this.inexogyMeterId = meterRes.data[0].meterId;
-				this.log.debug(`Found Inexogy meterId: ${this.inexogyMeterId}`);
 			}
 
 			const meterId = this.inexogyMeterId;
-
-			// 2. Fetch statistics using the meterId
 			const headers = { Authorization: `Basic ${basicAuth}` };
 
-			if (!split) {
+			if (!isSplit) {
 				const url = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${end.getTime()}`;
-				this.log.debug(`Fetching: ${url}`);
-
 				const dataRes = await axios.get(url, { headers, validateStatus: () => true });
 				const total = this.parseInexogyData(dataRes);
 				if (total !== null) {
-					return { total, go: 0, standard: 0 };
-				} else if (dataRes.status === 401 || dataRes.status === 403) {
-					this.log.error('Inexogy Authentication failed. Verify Email and Password.');
-				} else {
-					this.log.warn(`No Inexogy data returned. Status: ${dataRes.status}`);
+					let slots = {};
+					slots[this.masterData.rates[0].name] = { consumption: total };
+					return { total, slots };
 				}
 				return null;
 			}
-			const goEnd = new Date(start.getTime());
-			goEnd.setHours(5, 0, 0, 0);
 
-			const urlGo = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${start.getTime()}&to=${goEnd.getTime()}`;
-			const resGo = await axios.get(urlGo, { headers, validateStatus: () => true });
-			const go = this.parseInexogyData(resGo);
+			let result = { total: 0, slots: {} };
+			for (const rate of this.masterData.rates) {
+				const fromH = this.timeStrToHours(rate.from);
+				const toH = this.timeStrToHours(rate.to) || 24;
 
-			const urlStd = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${goEnd.getTime()}&to=${end.getTime()}`;
-			const resStd = await axios.get(urlStd, { headers, validateStatus: () => true });
-			const standard = this.parseInexogyData(resStd);
+				// Simplify Inexogy fetching: just handle standard 1 contiguous block for now
+				// If a tariff wraps around midnight (e.g. 23:00 to 05:00), we need two queries for the day.
+				let consumption = 0;
+				if (fromH < toH) {
+					const sTime = new Date(start.getTime());
+					sTime.setHours(fromH, 0, 0, 0);
+					const eTime = new Date(start.getTime());
+					eTime.setHours(toH, 0, 0, 0);
+					const url = `https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${sTime.getTime()}&to=${eTime.getTime()}`;
+					const res = await axios.get(url, { headers, validateStatus: () => true });
+					consumption += this.parseInexogyData(res) || 0;
+				} else {
+					// from 23 to 05 (next day) but we are querying for the current day.
+					// This means 00:00 to 05:00 and 23:00 to 24:00
+					const s1 = new Date(start.getTime());
+					s1.setHours(0, 0, 0, 0);
+					const e1 = new Date(start.getTime());
+					e1.setHours(toH, 0, 0, 0);
+					const res1 = await axios.get(
+						`https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${s1.getTime()}&to=${e1.getTime()}`,
+						{ headers, validateStatus: () => true },
+					);
+					consumption += this.parseInexogyData(res1) || 0;
 
-			if (go !== null && standard !== null) {
-				const total = parseFloat((go + standard).toFixed(3));
-				return { total, go, standard };
-			} else if (resGo.status === 401 || resGo.status === 403 || resStd.status === 401 || resStd.status === 403) {
-				this.log.error('Inexogy Authentication failed. Verify Email and Password.');
-			} else {
-				this.log.warn(`Inexogy data split fetch failed.`);
+					const s2 = new Date(start.getTime());
+					s2.setHours(fromH, 0, 0, 0);
+					const e2 = new Date(start.getTime());
+					e2.setHours(24, 0, 0, 0);
+					const res2 = await axios.get(
+						`https://api.inexogy.com/public/v1/statistics?meterId=${meterId}&from=${s2.getTime()}&to=${e2.getTime()}`,
+						{ headers, validateStatus: () => true },
+					);
+					consumption += this.parseInexogyData(res2) || 0;
+				}
+
+				result.slots[rate.name] = { consumption };
+				result.total += consumption;
 			}
-			return null;
+
+			return result;
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
 			return null;
 		}
 	}
 
-	async cleanupHistory() {
-		const retentionDays = Number(this.config.retentionDays);
-		if (isNaN(retentionDays) || retentionDays <= 0) {
-			this.log.debug('Retention disabled or invalid value.');
+	async syncData() {
+		await this.cleanupLegacyHistory();
+		const syncDays = Number(this.config.syncDays) || 30;
+		this.log.info(`Starting ${syncDays}-day retroactive data sync...`);
+
+		const masterData = await this.fetchOctopusMasterData();
+		if (!masterData) {
+			this.log.warn('Aborting sync because master data could not be fetched.');
 			return;
 		}
 
-		this.log.info(`Cleaning up history older than ${retentionDays} days...`);
-		const cutoffDate = new Date();
-		cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-		cutoffDate.setHours(0, 0, 0, 0);
+		let currentMonth = { consumption: 0, cost: 0 };
+		const currentMonthStr = `${new Date().getFullYear()}.${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
-		// Get all objects under history
+		try {
+			for (let i = syncDays; i >= 1; i--) {
+				const targetDate = new Date();
+				targetDate.setDate(targetDate.getDate() - i);
+				targetDate.setHours(0, 0, 0, 0);
+				const endDate = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
+
+				const yearStr = `${targetDate.getFullYear()}`;
+				const monthStr = String(targetDate.getMonth() + 1).padStart(2, '0');
+				const dayStr = String(targetDate.getDate()).padStart(2, '0');
+
+				const basePathYear = `history.${yearStr}`;
+				const basePathMonth = `${basePathYear}.${monthStr}`;
+				const basePathDay = `${basePathMonth}.${dayStr}`;
+
+				let isCached = false;
+				const checkState = await this.getStateAsync(`${basePathDay}.octopus.dailyConsumption`);
+				isCached = !!(checkState && checkState.val !== null && checkState.val !== undefined);
+
+				if (!isCached) {
+					this.log.debug(`Syncing data for ${yearStr}-${monthStr}-${dayStr}...`);
+
+					// Create hierarchical folders
+					await this.setObjectNotExistsAsync(basePathYear, {
+						type: 'channel',
+						common: { name: `Year ${yearStr}` },
+						native: {},
+					});
+					await this.setObjectNotExistsAsync(basePathMonth, {
+						type: 'channel',
+						common: { name: `Month ${yearStr}-${monthStr}` },
+						native: {},
+					});
+					await this.setObjectNotExistsAsync(basePathDay, {
+						type: 'channel',
+						common: { name: `Day ${yearStr}-${monthStr}-${dayStr}` },
+						native: {},
+					});
+
+					const octopusData = await this.fetchOctopus(targetDate, endDate);
+					let inexogyData = null;
+					if (this.hasInexogy) inexogyData = await this.fetchInexogy(targetDate, endDate);
+
+					if (octopusData) {
+						await this.writeStateObject(
+							`${basePathDay}.octopus.dailyConsumption`,
+							'Daily Consumption',
+							parseFloat(octopusData.total.toFixed(3)),
+						);
+						await this.writeStateObject(
+							`${basePathDay}.octopus.totalCost`,
+							'Total Daily Cost',
+							parseFloat(octopusData.totalCost.toFixed(2)),
+							'value',
+							'number',
+							'€',
+						);
+
+						for (const [slotName, slotData] of Object.entries(octopusData.slots)) {
+							const safeName = slotName.toLowerCase();
+							await this.writeStateObject(
+								`${basePathDay}.octopus.${safeName}Consumption`,
+								`Consumption ${slotName}`,
+								parseFloat(slotData.consumption.toFixed(3)),
+							);
+							await this.writeStateObject(
+								`${basePathDay}.octopus.${safeName}Cost`,
+								`Cost ${slotName}`,
+								parseFloat(slotData.cost.toFixed(2)),
+								'value',
+								'number',
+								'€',
+							);
+						}
+
+						if (inexogyData) {
+							await this.writeStateObject(
+								`${basePathDay}.inexogy.dailyConsumption`,
+								'Daily Consumption',
+								parseFloat(inexogyData.total.toFixed(3)),
+							);
+
+							for (const [slotName, slotData] of Object.entries(inexogyData.slots)) {
+								const safeName = slotName.toLowerCase();
+								await this.writeStateObject(
+									`${basePathDay}.inexogy.${safeName}Consumption`,
+									`Consumption ${slotName}`,
+									parseFloat(slotData.consumption.toFixed(3)),
+								);
+
+								const diff = Math.abs(octopusData.slots[slotName].consumption - slotData.consumption);
+								await this.writeStateObject(
+									`${basePathDay}.comparison.${safeName}Difference`,
+									`Difference ${slotName}`,
+									parseFloat(diff.toFixed(3)),
+								);
+							}
+
+							const totalDiff = Math.abs(octopusData.total - inexogyData.total);
+							const threshold = Number(this.config.discrepancyThreshold) || 0.1;
+							await this.writeStateObject(
+								`${basePathDay}.comparison.difference`,
+								'Absolute Difference',
+								parseFloat(totalDiff.toFixed(3)),
+							);
+							await this.writeStateObject(
+								`${basePathDay}.comparison.hasDiscrepancy`,
+								'Has Discrepancy',
+								totalDiff >= threshold,
+								'indicator',
+								'boolean',
+							);
+
+							if (totalDiff >= threshold)
+								this.log.warn(
+									`Discrepancy for ${yearStr}-${monthStr}-${dayStr}! Diff: ${totalDiff.toFixed(3)} kWh`,
+								);
+						}
+					} else {
+						this.log.warn(`Skipping ${yearStr}-${monthStr}-${dayStr} due to missing Octopus data.`);
+					}
+				}
+			}
+
+			// Aggregate hierarchical data
+			await this.aggregateHistory();
+
+			// Update JSONs
+			await this.updateHistoryJson();
+		} catch (error) {
+			this.log.error(`Error during syncData: ${error.message}`);
+		}
+	}
+
+	async aggregateHistory() {
+		this.log.debug('Aggregating hierarchical history...');
 		const objects = await this.getAdapterObjectsAsync();
 		const historyPrefix = `${this.namespace}.history.`;
 
+		const yearMap = {}; // year -> { consumption, cost, months: { month -> { consumption, cost } } }
+		let currentMonthTotals = { consumption: 0, cost: 0 };
+		const currentY = new Date().getFullYear();
+		const currentM = String(new Date().getMonth() + 1).padStart(2, '0');
+
 		for (const id of Object.keys(objects)) {
 			if (id.startsWith(historyPrefix)) {
-				// ID format: octopus-energy-monitor.0.history.YYYY-MM-DD...
 				const relativeId = id.substring(historyPrefix.length);
-				const datePart = relativeId.split('.')[0]; // YYYY-MM-DD
+				const parts = relativeId.split('.');
+				// parts = [YYYY, MM, DD, 'octopus', 'dailyConsumption']
+				if (parts.length === 5 && parts[3] === 'octopus' && parts[4] === 'dailyConsumption') {
+					const year = parts[0];
+					const month = parts[1];
 
-				if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-					const [year, month, day] = datePart.split('-').map(Number);
-					const stateDate = new Date(year, month - 1, day);
-					if (stateDate < cutoffDate) {
-						this.log.debug(`Deleting old history object: ${id}`);
-						// delObject needs id without namespace
-						await this.delObjectAsync(id.substring(this.namespace.length + 1));
+					if (!yearMap[year]) yearMap[year] = { consumption: 0, cost: 0, months: {} };
+					if (!yearMap[year].months[month]) yearMap[year].months[month] = { consumption: 0, cost: 0 };
+
+					const consState = await this.getStateAsync(id);
+					const costState = await this.getStateAsync(
+						`${historyPrefix}${year}.${month}.${parts[2]}.octopus.totalCost`,
+					);
+
+					const cons = consState && consState.val ? Number(consState.val) : 0;
+					const cost = costState && costState.val ? Number(costState.val) : 0;
+
+					yearMap[year].consumption += cons;
+					yearMap[year].cost += cost;
+					yearMap[year].months[month].consumption += cons;
+					yearMap[year].months[month].cost += cost;
+
+					if (year === String(currentY) && month === currentM) {
+						currentMonthTotals.consumption += cons;
+						currentMonthTotals.cost += cost;
 					}
 				}
 			}
 		}
+
+		for (const [year, yData] of Object.entries(yearMap)) {
+			await this.writeStateObject(
+				`history.${year}.totalConsumption`,
+				`Year ${year} Consumption`,
+				parseFloat(yData.consumption.toFixed(3)),
+			);
+			await this.writeStateObject(
+				`history.${year}.totalCost`,
+				`Year ${year} Cost`,
+				parseFloat(yData.cost.toFixed(2)),
+				'value',
+				'number',
+				'€',
+			);
+
+			for (const [month, mData] of Object.entries(yData.months)) {
+				await this.writeStateObject(
+					`history.${year}.${month}.totalConsumption`,
+					`Month ${year}-${month} Consumption`,
+					parseFloat(mData.consumption.toFixed(3)),
+				);
+				await this.writeStateObject(
+					`history.${year}.${month}.totalCost`,
+					`Month ${year}-${month} Cost`,
+					parseFloat(mData.cost.toFixed(2)),
+					'value',
+					'number',
+					'€',
+				);
+			}
+		}
+
+		await this.writeStateObject(
+			'octopus.currentMonth.totalConsumption',
+			'Current Month Consumption',
+			parseFloat(currentMonthTotals.consumption.toFixed(3)),
+		);
+		await this.writeStateObject(
+			'octopus.currentMonth.totalCost',
+			'Current Month Cost',
+			parseFloat(currentMonthTotals.cost.toFixed(2)),
+			'value',
+			'number',
+			'€',
+		);
 	}
 
 	async updateHistoryJson() {
@@ -596,9 +715,14 @@ class EnergyCompare extends utils.Adapter {
 		for (const id of Object.keys(objects)) {
 			if (id.startsWith(historyPrefix)) {
 				const relativeId = id.substring(historyPrefix.length);
-				const datePart = relativeId.split('.')[0];
-				if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-					dates.add(datePart);
+				const parts = relativeId.split('.');
+				if (
+					parts.length >= 3 &&
+					/^\d{4}$/.test(parts[0]) &&
+					/^\d{2}$/.test(parts[1]) &&
+					/^\d{2}$/.test(parts[2])
+				) {
+					dates.add(`${parts[0]}.${parts[1]}.${parts[2]}`);
 				}
 			}
 		}
@@ -608,47 +732,26 @@ class EnergyCompare extends utils.Adapter {
 		const inexogyHistory = [];
 
 		for (const dateStr of sortedDates) {
-			const [year, month, day] = dateStr.split('-').map(Number);
+			const [year, month, day] = dateStr.split('.').map(Number);
 			const timestamp = new Date(year, month - 1, day).getTime();
 			const basePath = `history.${dateStr}`;
 
-			// Octopus
-			const octGo = await this.getStateAsync(`${basePath}.octopus.goConsumption`);
-			const octStd = await this.getStateAsync(`${basePath}.octopus.standardConsumption`);
 			const octTotal = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
-
-			const octGoVal = octGo && octGo.val != null ? Number(octGo.val) : 0;
-			const octStdVal = octStd && octStd.val != null ? Number(octStd.val) : 0;
-			const octTotalVal =
-				octTotal && octTotal.val != null ? Number(octTotal.val) : parseFloat((octGoVal + octStdVal).toFixed(3));
+			const octCost = await this.getStateAsync(`${basePath}.octopus.totalCost`);
 
 			octopusHistory.push({
-				date: dateStr,
+				date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
 				timestamp: timestamp,
-				go: octGoVal,
-				standard: octStdVal,
-				total: octTotalVal,
+				total: octTotal?.val || 0,
+				totalCost: octCost?.val || 0,
 			});
 
-			// Inexogy
 			if (this.hasInexogy) {
-				const inxGo = await this.getStateAsync(`${basePath}.inexogy.goConsumption`);
-				const inxStd = await this.getStateAsync(`${basePath}.inexogy.standardConsumption`);
 				const inxTotal = await this.getStateAsync(`${basePath}.inexogy.dailyConsumption`);
-
-				const inxGoVal = inxGo && inxGo.val != null ? Number(inxGo.val) : 0;
-				const inxStdVal = inxStd && inxStd.val != null ? Number(inxStd.val) : 0;
-				const inxTotalVal =
-					inxTotal && inxTotal.val != null
-						? Number(inxTotal.val)
-						: parseFloat((inxGoVal + inxStdVal).toFixed(3));
-
 				inexogyHistory.push({
-					date: dateStr,
+					date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
 					timestamp: timestamp,
-					go: inxGoVal,
-					standard: inxStdVal,
-					total: inxTotalVal,
+					total: inxTotal?.val || 0,
 				});
 			}
 		}
@@ -661,12 +764,9 @@ class EnergyCompare extends utils.Adapter {
 
 	onUnload(callback) {
 		try {
-			if (this.cronJob) {
-				this.cronJob.stop();
-			}
+			if (this.cronJob) this.cronJob.stop();
 			callback();
 		} catch (error) {
-			this.log.error(`Error during unloading: ${error.message}`);
 			callback();
 		}
 	}
