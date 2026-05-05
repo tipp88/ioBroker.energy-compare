@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.2.3",
+    "version": "0.3.0",
     "news": {
+      "0.3.0": {
+        "en": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "de": "Dynamische Tarife, hierarchische Historie und Stammdatenabruf implementiert.",
+        "ru": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "pt": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "nl": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "fr": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "it": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "es": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "pl": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "uk": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
+        "zh-cn": "Implement dynamic tariffs, hierarchical history, and master data fetch."
+      },
       "0.2.3": {
         "en": "Updated adapter logo and icon.",
         "de": "Aktualisiertes Adapter-Logo und Icon.",
