@@ -58,6 +58,8 @@ To install this adapter seamlessly into your ioBroker environment:
 Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history.YYYY.MM.DD` path.
 
 ## Changelog
+### **WORK IN PROGRESS**
+
 ### 0.4.0 (2026-05-05)
 * (tipp88) Implement estimated meter reading calculation based on official Kraken data.
 
