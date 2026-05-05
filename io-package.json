@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "news": {
+      "0.3.2": {
+        "en": "Include dynamic slot consumption and cost in history JSON.",
+        "de": "Verbrauch und Kosten pro Zeitslot im History-JSON hinzugefügt.",
+        "ru": "Include dynamic slot consumption and cost in history JSON.",
+        "pt": "Include dynamic slot consumption and cost in history JSON.",
+        "nl": "Include dynamic slot consumption and cost in history JSON.",
+        "fr": "Include dynamic slot consumption and cost in history JSON.",
+        "it": "Include dynamic slot consumption and cost in history JSON.",
+        "es": "Include dynamic slot consumption and cost in history JSON.",
+        "pl": "Include dynamic slot consumption and cost in history JSON.",
+        "uk": "Include dynamic slot consumption and cost in history JSON.",
+        "zh-cn": "Include dynamic slot consumption and cost in history JSON."
+      },
       "0.3.1": {
         "en": "Fix linting errors and repository structure.",
         "de": "Linting-Fehler behoben.",

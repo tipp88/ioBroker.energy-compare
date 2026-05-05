@@ -767,23 +767,37 @@ class EnergyCompare extends utils.Adapter {
 			const timestamp = new Date(year, month - 1, day).getTime();
 			const basePath = `history.${dateStr}`;
 
-			const octTotal = await this.getStateAsync(`${basePath}.octopus.dailyConsumption`);
-			const octCost = await this.getStateAsync(`${basePath}.octopus.totalCost`);
-
-			octopusHistory.push({
+			const dayObj = {
 				date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
 				timestamp: timestamp,
-				total: octTotal?.val || 0,
-				totalCost: octCost?.val || 0,
-			});
+				total: (await this.getStateAsync(`${basePath}.octopus.dailyConsumption`))?.val || 0,
+				totalCost: (await this.getStateAsync(`${basePath}.octopus.totalCost`))?.val || 0,
+			};
+
+			if (this.masterData && this.masterData.rates) {
+				for (const rate of this.masterData.rates) {
+					const name = rate.name.toLowerCase();
+					dayObj[name] = (await this.getStateAsync(`${basePath}.octopus.${name}Consumption`))?.val || 0;
+					dayObj[`${name}Cost`] = (await this.getStateAsync(`${basePath}.octopus.${name}Cost`))?.val || 0;
+				}
+			}
+			octopusHistory.push(dayObj);
 
 			if (this.hasInexogy) {
-				const inxTotal = await this.getStateAsync(`${basePath}.inexogy.dailyConsumption`);
-				inexogyHistory.push({
+				const inxDayObj = {
 					date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
 					timestamp: timestamp,
-					total: inxTotal?.val || 0,
-				});
+					total: (await this.getStateAsync(`${basePath}.inexogy.dailyConsumption`))?.val || 0,
+				};
+
+				if (this.masterData && this.masterData.rates) {
+					for (const rate of this.masterData.rates) {
+						const name = rate.name.toLowerCase();
+						inxDayObj[name] =
+							(await this.getStateAsync(`${basePath}.inexogy.${name}Consumption`))?.val || 0;
+					}
+				}
+				inexogyHistory.push(inxDayObj);
 			}
 		}
 
