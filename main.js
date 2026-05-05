@@ -556,6 +556,7 @@ class EnergyCompare extends utils.Adapter {
 				result.total += consumption;
 			}
 
+			this.log.debug(`Inexogy fetch successful for ${meterId}: Total ${result.total} kWh`);
 			return result;
 		} catch (error) {
 			this.log.error(`Inexogy fetch error: ${error.message}`);
@@ -590,8 +591,16 @@ class EnergyCompare extends utils.Adapter {
 				const basePathDay = `${basePathMonth}.${dayStr}`;
 
 				let isCached = false;
-				const checkState = await this.getStateAsync(`${basePathDay}.octopus.dailyConsumption`);
-				isCached = !!(checkState && checkState.val !== null && checkState.val !== undefined);
+				const checkOctopus = await this.getStateAsync(`${basePathDay}.octopus.dailyConsumption`);
+				const hasOctopus = !!(checkOctopus && checkOctopus.val !== null);
+
+				let hasInexogyData = true;
+				if (this.hasInexogy) {
+					const checkInexogy = await this.getStateAsync(`${basePathDay}.inexogy.dailyConsumption`);
+					hasInexogyData = !!(checkInexogy && checkInexogy.val !== null);
+				}
+
+				isCached = hasOctopus && hasInexogyData;
 
 				if (!isCached) {
 					this.log.debug(`Syncing data for ${yearStr}-${monthStr}-${dayStr}...`);
