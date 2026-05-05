@@ -202,7 +202,7 @@ class EnergyCompare extends utils.Adapter {
 										}
 									}
 								}
-								meters { number }
+								meters { id number }
 								mop { name }
 								dno { name }
 							}
