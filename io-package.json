@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.3.2",
+    "version": "0.4.0",
     "news": {
+      "0.4.0": {
+        "en": "Implement estimated meter reading calculation based on official Kraken data.",
+        "de": "Ergänzen Sie geschätzte Messwertberechnung basierend auf offiziellen Kraken-Daten.",
+        "ru": "Внедрить расчетный расчет показания счетчика на основе официальных данных Kraken.",
+        "pt": "Implementar cálculo estimado de leitura de metros com base em dados Kraken oficiais.",
+        "nl": "Geschatte berekening van meterlezen uitvoeren op basis van officiële Krakengegevens.",
+        "fr": "Mettre en oeuvre le calcul de la lecture estimée des compteurs à partir des données officielles de Kraken.",
+        "it": "Implementare calcolatore di lettura del metro stimato in base ai dati ufficiali Kraken.",
+        "es": "Implementar cálculo estimado de lectura de medidores basado en datos oficiales Kraken.",
+        "pl": "Wdrożenie szacowanych obliczeń odczytu licznika na podstawie oficjalnych danych Kraken.",
+        "uk": "Впровадження розрахункового розрахунку лічильників на основі офіційних даних Кракен.",
+        "zh-cn": "根据 Kraken 的官方数据执行估计测量值的读取计算."
+      },
       "0.3.2": {
         "en": "Include dynamic slot consumption and cost in history JSON.",
         "de": "Verbrauch und Kosten pro Zeitslot im History-JSON hinzugefügt.",
@@ -80,19 +93,6 @@
         "pl": "Naprawiono ostrzeżenia i błędy dotyczące sprawdzania adaptera.",
         "uk": "Виправлені попередження та помилки адаптера.",
         "zh-cn": "固定适配器检查器警告和错误."
-      },
-      "0.2.0": {
-        "en": "Added data retention setting and aggregated history JSON states.",
-        "de": "Hinzugefügt Datenretention Einstellung und aggregierte Geschichte JSON Zustände.",
-        "ru": "Добавлены настройки хранения данных и агрегированная история состояний JSON.",
-        "pt": "Adicionado configuração de retenção de dados e estados de histórico agregado JSON.",
-        "nl": "Toegevoegd het opslaan van gegevens en geaggregeerde geschiedenis JSON staat.",
-        "fr": "Ajout du paramètre de conservation des données et de l'historique agrégé des états JSON.",
-        "it": "Aggiunta impostazione di conservazione dei dati e aggregato storia JSON stati.",
-        "es": "Se agregó el ajuste de retención de datos e historia agregada JSON estados.",
-        "pl": "Dodano ustawienia retencji danych i zagregowane stany JSON.",
-        "uk": "Додано налаштування збереження даних та узагальнену історію JSON.",
-        "zh-cn": "添加数据保留设置和汇总历史JSON状态."
       }
     },
     "titleLang": {
