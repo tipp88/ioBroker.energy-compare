@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "news": {
+      "0.4.2": {
+        "en": "Fixed Inexogy data syncing when Octopus data already exists.",
+        "de": "Feste Inexogy-Datensynchronisierung, wenn Octopus-Daten bereits vorhanden sind.",
+        "ru": "Фиксированная синхронизация данных при наличии данных Octopus.",
+        "pt": "Fixo a sincronização de dados da Inexogy quando os dados da Octopus já existem.",
+        "nl": "Fixed Inexogy data synchronisatie wanneer Octopus data al bestaat.",
+        "fr": "Correction de la synchronisation des données inexogy lorsque les données Octopus existent déjà.",
+        "it": "Risolto la sincronizzazione dei dati Inexogy quando i dati Octopus esistono già.",
+        "es": "Se fija la sincronización de datos Inexogy cuando los datos de Octopus ya existen.",
+        "pl": "Naprawiono synchronizację danych Inexogy, gdy istnieją już dane Octopus.",
+        "uk": "Виправлена синхронізація даних, коли дані Octopus вже існують.",
+        "zh-cn": "当Octopus数据已经存在时,固定的Inexogy数据同步."
+      },
       "0.4.1": {
         "en": "Fixed missing meter ID in master data fetch.\nFixed GraphQL variable type for meter readings (Date vs DateTime).",
         "de": "Behobene fehlende Zähler-ID im Master Data Fetch.\nFixed GraphQL Variablentyp für Messwerte (Date vs DateTime).",
@@ -80,19 +93,6 @@
         "pl": "Aktualizacja logo adaptera i ikona.",
         "uk": "Оновлений логотип адаптера і іконка.",
         "zh-cn": "更新适配器标识和图标."
-      },
-      "0.2.2": {
-        "en": "Renamed adapter to ioBroker.octopus-energy-monitor",
-        "de": "Umbenannter Adapter zum ioBroker.octopus-Energiemonitor",
-        "ru": "Переименован адаптер в ioBroker.octopus-energy-monitor",
-        "pt": "Adaptador renomeado para ioBroker.octopus-energy-monitor",
-        "nl": "Hernoemde adapter voor ioBroker.octopus-energy-monitor",
-        "fr": "Adaptateur renommé pour ioBroker.octopus-energy-monitor",
-        "it": "Adattatore rinominato a ioBroker.octopus-energy-monitor",
-        "es": "Adaptador renombrado a ioBroker.octopus-energía-monitor",
-        "pl": "Zmieniono nazwę adaptera na joBroker.octopus- energy-monitor",
-        "uk": "Перейменований адаптер для ioBroker.octopus-energy-monitor",
-        "zh-cn": "重新命名为 ioBroker.octopus- 能量监视器的适配器"
       }
     },
     "titleLang": {
