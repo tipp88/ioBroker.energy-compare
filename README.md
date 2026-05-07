@@ -62,6 +62,8 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 ## Changelog
 ### **WORK IN PROGRESS**
 * (tipp88) Implement Smart Charging control switch (Suspend/Resume) and dynamic device fetching via Kraken API.
+
+### 0.4.4 (2026-05-07)
 * (tipp88) Fetch and store Inexogy meter master data and current live reading.
 
 ### 0.4.3 (2026-05-07)
