@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "news": {
+      "0.5.3": {
+        "en": "Fix missing responsive size attributes in `jsonConfig.json` (Issue #1 follow-up).\nResize SVG logo and its `viewBox` to exactly 512x512 pixels.",
+        "de": "Behebt fehlende Ansprechgrößenattribute in `jsonConfig.json` (Issue #1 Follow-up).\nGröße SVG-Logo und seine `viewBox` auf genau 512x512 Pixel.",
+        "ru": "Исправьте недостающие атрибуты размера в jsonConfig.json (выпуск No 1).\nРазмер логотипа SVG и его «viewBox» составляет ровно 512x512 пикселей.",
+        "pt": "Corrigir os atributos de tamanho responsivo em `jsonConfig.json` (follow-up do issue #1).\nRedimensione o logotipo SVG e seu 'viewBox' para exatamente 512x512 pixels.",
+        "nl": "Repareren ontbrekende responsieve grootte attributen in .\nGrootte SVG-logo en zijn .",
+        "fr": "Correction des attributs de taille réactive manquants dans `jsonConfig.json` (suivi d'Issue #1).\nRedimensionner le logo SVG et sa `viewBox` en 512x512 pixels.",
+        "it": "Fissare gli attributi mancanti di dimensione reattiva in `jsonConfig.json` (Issue #1 follow-up).\nRidimensiona il logo SVG e il suo `viewBox` a esattamente 512x512 pixel.",
+        "es": "Arreglar los atributos de tamaño receptivo desaparecidos en `jsonConfig.json` (Aplicación Isue #1).\nResize SVG logo and its `viewBox` to exact 512x512 pixels.",
+        "pl": "Poprawiono brakujące atrybuty responsywnych rozmiarów w 'jsonConfig.json' (Wydanie # 1 po zakończeniu).\nZmień logo SVG i jego 'viewBox' na dokładnie 512x512 pikseli.",
+        "uk": "Фіксувати відсутні атрибути чуйного розміру в `jsonConfig.json` (Issue #1 end-up).\nResize SVG логотип і його `viewBox` для точно 512x512 пікселів.",
+        "zh-cn": "在“jsonConfig.json”(问题1后续)中修复缺失的响应大小属性.\n将 SVG 标志及其“ ViewBox” 修改为 512x512 像素 ."
+      },
       "0.5.2": {
         "en": "Consolidated release: Smart Charging control, Inexogy master data, manual refresh button, and repository checker fixes.",
         "de": "Konsolidierte Version: Smart Charging Steuerung, Inexogy-Stammdaten, manueller Refresh-Button und Behebung von Repository-Checker-Issues.",
