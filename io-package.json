@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "news": {
+      "0.5.1": {
+        "en": "Fix all issues reported by ioBroker repository checker (Issue #1).",
+        "de": "Beheben Sie alle Probleme, die von ioBroker Repository Checker gemeldet wurden (Issue #1).",
+        "ru": "Исправьте все проблемы, о которых сообщает ioBroker repository checker (выпуск #1).",
+        "pt": "Corrigir todos os problemas relatados pelo verificador de repositório ioBroker (Issue #1).",
+        "nl": "Repareer alle door ioBroker Repository Checker gerapporteerde problemen (Issue #1).",
+        "fr": "Correction de tous les problèmes signalés par le vérificateur de dépôt ioBroker (Issue #1).",
+        "it": "Risolvi tutti i problemi segnalati da ioBroker repository checker (Issue #1).",
+        "es": "Arreglar todos los problemas reportados por el repositorio de ioBroker (Issue #1).",
+        "pl": "Popraw wszystkie problemy zgłoszone przez sprawdzacz repozytorium jOBroker (wydanie # 1).",
+        "uk": "Виправлення всіх питань, які повідомляються ioBroker repository checker (Issue #1).",
+        "zh-cn": "解决ioBroker仓库检查器(Issue #1)报告的所有问题."
+      },
       "0.5.0": {
         "en": "Implement Smart Charging control switch (Suspend/Resume) and dynamic device fetching via Kraken API.",
         "de": "Implementieren Sie Smart Charging Steuerschalter (Suspend/Resume) und dynamisches Gerät fetching über Kraken API.",
