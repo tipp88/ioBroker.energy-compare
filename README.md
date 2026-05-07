@@ -24,6 +24,8 @@ Its key purpose is identifying discrepancies in billing/measurement between your
 * **Estimated Meter Reading:** Calculates your current electricity meter reading by combining the latest official Kraken reading with your subsequent daily consumptions.
 * **Inexogy (Discovergy) Comparison:** Leverages the Inexogy API to compare consumption data against your provider's data, helping identify billing discrepancies.
 * **Master Data Insight:** Provides transparency into your account balance, meter details, and involved network operators (MOP/DNO).
+* **Smart Charging Control:** Dynamically fetch Intelligent Octopus devices (EVs/chargers) and toggle Smart Charging (Suspend/Resume) directly from ioBroker.
+* **Inexogy Master Data & Live Reading:** Fetch serial numbers, location details, and current meter readings (Bezug/Einspeisung) from Inexogy.
 * **Smart Caching:** Minimizes API load by retroactively syncing only missing data points (30-day default).
 
 ---
