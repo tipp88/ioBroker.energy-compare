@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "news": {
+      "0.4.4": {
+        "en": "Fetch and store Inexogy meter master data and current live reading.",
+        "de": "Fetch und speichern Inexogy Meter Stammdaten und aktuelle Live-Lese.",
+        "ru": "Получите и храните основные данные измерителя Inexogy и текущее живое чтение.",
+        "pt": "Obter e armazenar os dados mestre do medidor de Inexogy e leitura ao vivo atual.",
+        "nl": "Haal en bewaar Inexogy meter hoofdgegevens en actuele live-reading.",
+        "fr": "Saisir et stocker Inexogy Meter master data et la lecture en direct actuelle.",
+        "it": "Ottenere e memorizzare i dati master del contatore Inexogy e la lettura live corrente.",
+        "es": "Busque y almacene los datos maestros del medidor de Inexogy y la lectura actual en vivo.",
+        "pl": "Pobierz i przechowywać dane Master miernika inexogy i bieżącą czytanie na żywo.",
+        "uk": "Захоплення і зберігання Inexogy метра магістр даних і струм читання живого життя.",
+        "zh-cn": "获取并存储 Inexogy meter 主数据以及当前实时读取."
+      },
       "0.4.3": {
         "en": "Fixed API token expiration by implementing automatic re-login.\nReplaced fixed daily cron job with configurable update interval (default 60 minutes).\nRemoved node-cron dependency.",
         "de": "Behobene API-Token-Experimente durch automatisches Re-Login.\nErsetzte feste tägliche Cron-Job mit konfigurierbarem Update-Intervall (Standard 60 Minuten).\nEntfernung von Node-Cron Abhängigkeit.",
@@ -80,19 +93,6 @@
         "pl": "Fix linting errors and repository structure.",
         "uk": "Fix linting errors and repository structure.",
         "zh-cn": "Fix linting errors and repository structure."
-      },
-      "0.3.0": {
-        "en": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "de": "Dynamische Tarife, hierarchische Historie und Stammdatenabruf implementiert.",
-        "ru": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "pt": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "nl": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "fr": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "it": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "es": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "pl": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "uk": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
-        "zh-cn": "Implement dynamic tariffs, hierarchical history, and master data fetch."
       }
     },
     "titleLang": {
