@@ -67,8 +67,7 @@
         "pl": "Naprawiono brak identyfikatora miernika w głównym pobieraniu danych.\nNaprawiono typ zmiennej GraphQL dla odczytów mierników (Data vs DateTime).",
         "uk": "Фіксований відсутній метровий ідентифікатор в майстерні даних fetch.\nФіксований GraphQL змінний тип для читальних метрів (Date vs DateTime).",
         "zh-cn": "主数据获取中固定缺失的测量器ID .\n计量读取的固定图形QL变量类型(Date vs DateTime)."
-      },
-
+      }
     },
     "titleLang": {
       "en": "Octopus Energy Monitor",
