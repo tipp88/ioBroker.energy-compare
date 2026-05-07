@@ -704,7 +704,7 @@ class EnergyCompare extends utils.Adapter {
 			const payload = {
 				query: `mutation MyMutation($deviceID: ID!) {
 					updateDeviceSmartControl(input: {deviceId: $deviceID, action: ${action}}) {
-						id name status { isSuspended currentState current ... on SmartFlexVehicleStatus { current isSuspended currentState } }
+						id name
 					}
 				}`,
 				variables: { deviceID: deviceId },
@@ -716,18 +716,12 @@ class EnergyCompare extends utils.Adapter {
 			});
 
 			if (res.status === 200 && res.data?.data?.updateDeviceSmartControl) {
-				const updatedDevice = res.data.data.updateDeviceSmartControl;
-				const isSuspended = !!updatedDevice.status?.isSuspended;
-				const smartChargeActive = !isSuspended;
+				this.log.info(`Smart Charging mutation ${action} sent for device ${deviceId}. Refreshing status in 5s...`);
 				
-				this.log.info(`Smart Charging for device ${deviceId} is now ${smartChargeActive ? 'ACTIVE' : 'SUSPENDED'}`);
-				
-				const basePath = `octopus.devices.${deviceId}`;
-				await this.setStateAsync(`${basePath}.smartChargeActive`, { val: smartChargeActive, ack: true });
-				await this.setStateAsync(`${basePath}.status.isSuspended`, { val: isSuspended, ack: true });
-				if (updatedDevice.status?.currentState) {
-					await this.setStateAsync(`${basePath}.status.currentState`, { val: updatedDevice.status.currentState, ack: true });
-				}
+				// Wait 5 seconds for the backend to propagate the change, then refresh
+				this.setTimeout(async () => {
+					await this.fetchOctopusDevices();
+				}, 5000);
 			} else {
 				this.log.error(`Failed to set smart charge status. Response: ${JSON.stringify(res.data || res.statusText)}`);
 			}
