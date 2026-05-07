@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "news": {
+      "0.4.3": {
+        "en": "Fixed API token expiration by implementing automatic re-login.\nReplaced fixed daily cron job with configurable update interval (default 60 minutes).\nRemoved node-cron dependency.",
+        "de": "Behobene API-Token-Experimente durch automatisches Re-Login.\nErsetzte feste tägliche Cron-Job mit konfigurierbarem Update-Intervall (Standard 60 Minuten).\nEntfernung von Node-Cron Abhängigkeit.",
+        "ru": "Исход фиксированного токена API путем реализации автоматического повторного входа в систему.\nЗамена фиксированной ежедневной работы cron с настраиваемым интервалом обновления (по умолчанию 60 минут).\nСнята зависимость Node-Cron.",
+        "pt": "Expiração fixa do token da API implementando o re-login automático.\nSubstituido trabalho cron diário fixo com intervalo de atualização configurável (padrão 60 minutos).\nDependência de nó- cron removida.",
+        "nl": "Vaste API token verlopen door het implementeren van automatische re-login.\nVervangde vaste dagelijkse cron taak met configureerbare update interval (standaard 60 minuten).\nVerwijderde node-cron afhankelijkheid.",
+        "fr": "Correction de l'expiration du jeton API en implémentant la re-login automatique.\nRemplace le travail de cron quotidien fixe par un intervalle de mise à jour configurable (60 minutes par défaut).\nSupprimé la dépendance au noeud cron.",
+        "it": "Espersione di token API fissa implementando la ri-login automatica.\nSostituito lavoro fisso giornaliero di cron con intervallo di aggiornamento configurabile (default 60 minuti).\nRimossa dipendenza da nodo-cron.",
+        "es": "Caducidad de token API fija mediante la implementación de re-login automático.\nTrabajo de cron fijo diario con intervalo de actualización configurable (por defecto 60 minutos).\nRetirada dependencia del nodo-cron.",
+        "pl": "Naprawiono termin ważności tokena API poprzez wdrożenie automatycznego ponownego logowania.\nZastąpione stałe codzienne zadanie cron z konfigurowalnym interwał aktualizacji (domyślnie 60 minut).\nUsunięto uzależnienie od kijanki.",
+        "uk": "Виправлено закінчення терміну дії API за допомогою автоматичного перереєстрації.\nЗамінена фіксована щоденна робота з налаштуванням інтервалу оновлення (default 60 хвилин).\nВилучена залежність вершини.",
+        "zh-cn": "通过实施自动重登录,固定 API 令牌过期 .\n替换为可配置的更新间隔( 默认为 60 分钟) .\n删除节点- cron 依赖 ."
+      },
       "0.4.2": {
         "en": "Fixed Inexogy data syncing when Octopus data already exists.",
         "de": "Feste Inexogy-Datensynchronisierung, wenn Octopus-Daten bereits vorhanden sind.",
@@ -80,19 +93,6 @@
         "pl": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
         "uk": "Implement dynamic tariffs, hierarchical history, and master data fetch.",
         "zh-cn": "Implement dynamic tariffs, hierarchical history, and master data fetch."
-      },
-      "0.2.3": {
-        "en": "Updated adapter logo and icon.",
-        "de": "Aktualisiertes Adapter-Logo und Icon.",
-        "ru": "Обновленный адаптер логотипа и иконки.",
-        "pt": "Logotipo do adaptador atualizado e ícone.",
-        "nl": "Bijgewerkt adapter logo en pictogram.",
-        "fr": "Logo et icône de l'adaptateur mis à jour.",
-        "it": "Logo e icona dell'adattatore aggiornato.",
-        "es": "Actualizado logo e icono del adaptador.",
-        "pl": "Aktualizacja logo adaptera i ikona.",
-        "uk": "Оновлений логотип адаптера і іконка.",
-        "zh-cn": "更新适配器标识和图标."
       }
     },
     "titleLang": {
