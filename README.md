@@ -65,6 +65,7 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 
 ### 0.5.0 (2026-05-07)
 * (tipp88) Implement Smart Charging control switch (Suspend/Resume) and dynamic device fetching via Kraken API.
+* (tipp88) Add manual refresh button for Octopus devices to trigger on-demand status updates.
 
 ### 0.4.4 (2026-05-07)
 * (tipp88) Fetch and store Inexogy meter master data and current live reading.
