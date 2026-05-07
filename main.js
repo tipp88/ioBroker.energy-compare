@@ -606,7 +606,11 @@ class EnergyCompare extends utils.Adapter {
 				if (readingRes.data.values) {
 					if (readingRes.data.values.energy !== undefined) {
 						const kwh = readingRes.data.values.energy / 10000000000;
-						await this.writeStateObject('inexogy.info.lastReadingEnergy', 'Last Reading Energy', parseFloat(kwh.toFixed(3)), 'value', 'number', 'kWh');
+						await this.writeStateObject('inexogy.info.lastReadingEnergy', 'Last Reading Energy (Bezug)', parseFloat(kwh.toFixed(3)), 'value', 'number', 'kWh');
+					}
+					if (readingRes.data.values.energyOut !== undefined) {
+						const kwhOut = readingRes.data.values.energyOut / 10000000000;
+						await this.writeStateObject('inexogy.info.lastReadingEnergyOut', 'Last Reading Energy Out (Einspeisung)', parseFloat(kwhOut.toFixed(3)), 'value', 'number', 'kWh');
 					}
 					if (readingRes.data.values.power !== undefined) {
 						const powerW = readingRes.data.values.power / 1000;
