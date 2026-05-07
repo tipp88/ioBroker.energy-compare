@@ -68,32 +68,7 @@
         "uk": "Фіксований відсутній метровий ідентифікатор в майстерні даних fetch.\nФіксований GraphQL змінний тип для читальних метрів (Date vs DateTime).",
         "zh-cn": "主数据获取中固定缺失的测量器ID .\n计量读取的固定图形QL变量类型(Date vs DateTime)."
       },
-      "0.4.0": {
-        "en": "Implement estimated meter reading calculation based on official Kraken data.",
-        "de": "Ergänzen Sie geschätzte Messwertberechnung basierend auf offiziellen Kraken-Daten.",
-        "ru": "Внедрить расчетный расчет показания счетчика на основе официальных данных Kraken.",
-        "pt": "Implementar cálculo estimado de leitura de metros com base em dados Kraken oficiais.",
-        "nl": "Geschatte berekening van meterlezen uitvoeren op basis van officiële Krakengegevens.",
-        "fr": "Mettre en oeuvre le calcul de la lecture estimée des compteurs à partir des données officielles de Kraken.",
-        "it": "Implementare calcolatore di lettura del metro stimato in base ai dati ufficiali Kraken.",
-        "es": "Implementar cálculo estimado de lectura de medidores basado en datos oficiales Kraken.",
-        "pl": "Wdrożenie szacowanych obliczeń odczytu licznika na podstawie oficjalnych danych Kraken.",
-        "uk": "Впровадження розрахункового розрахунку лічильників на основі офіційних даних Кракен.",
-        "zh-cn": "根据 Kraken 的官方数据执行估计测量值的读取计算."
-      },
-      "0.3.2": {
-        "en": "Include dynamic slot consumption and cost in history JSON.",
-        "de": "Verbrauch und Kosten pro Zeitslot im History-JSON hinzugefügt.",
-        "ru": "Include dynamic slot consumption and cost in history JSON.",
-        "pt": "Include dynamic slot consumption and cost in history JSON.",
-        "nl": "Include dynamic slot consumption and cost in history JSON.",
-        "fr": "Include dynamic slot consumption and cost in history JSON.",
-        "it": "Include dynamic slot consumption and cost in history JSON.",
-        "es": "Include dynamic slot consumption and cost in history JSON.",
-        "pl": "Include dynamic slot consumption and cost in history JSON.",
-        "uk": "Include dynamic slot consumption and cost in history JSON.",
-        "zh-cn": "Include dynamic slot consumption and cost in history JSON."
-      }
+
     },
     "titleLang": {
       "en": "Octopus Energy Monitor",
@@ -155,11 +130,15 @@
     ],
     "globalDependencies": [
       {
-        "admin": ">=7.0.23"
+        "admin": ">=7.6.20"
       }
     ]
   },
   "encryptedNative": [
+    "octopusPassword",
+    "inexogyPassword"
+  ],
+  "protectedNative": [
     "octopusPassword",
     "inexogyPassword"
   ],

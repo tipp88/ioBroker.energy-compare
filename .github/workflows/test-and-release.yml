@@ -5,7 +5,7 @@ name: Test and Release
 on:
   push:
     branches:
-      - "main"
+      - "master"
     tags:
       # normal versions
       - "v[0-9]+.[0-9]+.[0-9]+"
@@ -36,6 +36,7 @@ jobs:
   # Runs adapter tests on all supported node versions and OSes
   adapter-tests:
     if: contains(github.event.head_commit.message, '[skip ci]') == false
+    needs: [check-and-lint]
 
     runs-on: ${{ matrix.os }}
     strategy:

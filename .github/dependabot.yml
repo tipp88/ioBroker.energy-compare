@@ -4,21 +4,23 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-      day: 6
       time: "00:05"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 15
     assignees:
       - User
     versioning-strategy: increase
+    cooldown:
+      default: 7
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
-      day: 6
       time: "00:05"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 15
     assignees:
       - User
+    cooldown:
+      default: 7

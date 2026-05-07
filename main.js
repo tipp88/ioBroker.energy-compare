@@ -44,7 +44,7 @@ class EnergyCompare extends utils.Adapter {
 
 		this.subscribeStates('octopus.devices.*.smartChargeActive');
 
-		setTimeout(() => this.syncData(), 5000);
+		this.setTimeout(() => this.syncData(), 5000);
 	}
 
 	async cleanupLegacyHistory() {

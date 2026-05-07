@@ -60,6 +60,9 @@ To install this adapter seamlessly into your ioBroker environment:
 Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history.YYYY.MM.DD` path.
 
 ## Changelog
+### **WORK IN PROGRESS**
+* (tipp88) Fix all issues reported by ioBroker repository checker (Issue #1).
+
 ### 0.5.0 (2026-05-07)
 * (tipp88) Implement Smart Charging control switch (Suspend/Resume) and dynamic device fetching via Kraken API.
 
