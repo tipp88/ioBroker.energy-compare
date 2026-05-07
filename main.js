@@ -43,6 +43,7 @@ class EnergyCompare extends utils.Adapter {
 		);
 
 		this.subscribeStates('octopus.devices.*.smartChargeActive');
+		this.subscribeStates('octopus.devices.*.refresh');
 
 		this.setTimeout(() => this.syncData(), 5000);
 	}
@@ -740,6 +741,18 @@ class EnergyCompare extends utils.Adapter {
 					});
 
 					await this.writeStateObject(`${basePath}.name`, 'Device Name', device.name || '', 'text', 'string');
+					await this.setObjectNotExistsAsync(`${basePath}.refresh`, {
+						type: 'state',
+						common: {
+							name: 'Refresh Device Data',
+							type: 'boolean',
+							role: 'button',
+							read: true,
+							write: true,
+						},
+						native: {},
+					});
+					await this.setStateAsync(`${basePath}.refresh`, { val: false, ack: true });
 					await this.writeStateObject(
 						`${basePath}.provider`,
 						'Provider',
@@ -883,6 +896,10 @@ class EnergyCompare extends utils.Adapter {
 
 				this.log.info(`User requested smart charge action ${action} for device ${deviceId}`);
 				await this.setSmartChargeStatus(deviceId, action);
+			} else if (id.startsWith(prefix) && id.endsWith('.refresh')) {
+				this.log.info(`User requested manual refresh for Octopus devices`);
+				await this.fetchOctopusDevices();
+				await this.setStateAsync(id, { val: false, ack: true });
 			}
 		}
 	}
