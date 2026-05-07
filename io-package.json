@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "news": {
+      "0.5.4": {
+        "en": "Activate automated release workflow with Trusted Publishing and Sentry integration.",
+        "de": "Aktivieren Sie automatisierten Release-Workflow mit Trusted Publishing und Sentry Integration.",
+        "ru": "Активировать автоматизированный рабочий процесс выпуска с помощью интеграции Trusted Publishing и Sentry.",
+        "pt": "Ative o fluxo de trabalho de liberação automatizado com integração de Publicação e Sentry confiáveis.",
+        "nl": "Activeer geautomatiseerde release workflow met Trusted Publishing en Sentry integratie.",
+        "fr": "Activer le flux de travail automatisé avec l'intégration Trusted Publishing et Sentry.",
+        "it": "Attiva il flusso di lavoro automatizzato di rilascio con l'integrazione Trusted Publishing e Sentry.",
+        "es": "Activar flujo de trabajo de liberación automatizado con la integración de Publicación Confiada y Sentry.",
+        "pl": "Uaktywnij zautomatyzowany strumień pracy wydawnictwa z zaufaną publikacją i integracją Sentry.",
+        "uk": "Активувати автоматизований процес випуску з перевіреною публікацією та інтеграцією Sentry.",
+        "zh-cn": "启动自动发布工作流程,与受托出版和哨兵集成."
+      },
       "0.5.3": {
         "en": "Fix missing responsive size attributes in `jsonConfig.json` (Issue #1 follow-up).\nResize SVG logo and its `viewBox` to exactly 512x512 pixels.",
         "de": "Behebt fehlende Ansprechgrößenattribute in `jsonConfig.json` (Issue #1 Follow-up).\nGröße SVG-Logo und seine `viewBox` auf genau 512x512 Pixel.",
