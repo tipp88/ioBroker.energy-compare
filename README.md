@@ -60,7 +60,7 @@ To install this adapter seamlessly into your ioBroker environment:
 Once configured, the adapter handles the rest! It sets an internal Cronjob scaling back 30 days every night. Data manifests under the `octopus-energy-monitor.0.history.YYYY.MM.DD` path.
 
 ## Changelog
-### **WORK IN PROGRESS**
+### 0.5.5 (2026-05-12)
 * (tipp88) Fixed 'splitGoTariff' setting to enforce 'Go' tariff splitting even if the API does not provide time windows.
 
 ### 0.5.4 (2026-05-07)

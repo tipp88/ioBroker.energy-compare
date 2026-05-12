@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "octopus-energy-monitor",
-    "version": "0.5.4",
+    "version": "0.5.5",
     "news": {
+      "0.5.5": {
+        "en": "Fixed 'splitGoTariff' setting to enforce 'Go' tariff splitting even if the API does not provide time windows.",
+        "de": "Behobene 'splitGoTariff'-Einstellung, um 'Go' Tarifteilung durchzusetzen, auch wenn die API keine Zeitfenster bietet.",
+        "ru": "Фиксированная настройка «splitGoTariff» для обеспечения разделения тарифов «Go», даже если API не предоставляет временные окна.",
+        "pt": "Fixo a configuração 'splitGoTariff' para forçar a divisão de tarifas 'Go' mesmo que a API não forneça janelas de tempo.",
+        "nl": "Vaste 'splitGoTariff' instelling om 'Go' tariefsplitsing af te dwingen, zelfs als de API geen tijdvensters biedt.",
+        "fr": "Correction du paramètre 'splitGoTariff' pour imposer le fractionnement tarifaire 'Go' même si l'API ne fournit pas de fenêtres de temps.",
+        "it": "Impostazione fissa 'splitGoTariff' per far rispettare la divisione tariffaria 'Go' anche se l'API non fornisce finestre temporali.",
+        "es": "Fijación 'splitGoTariff' para imponer la división arancelaria 'Go' incluso si la API no proporciona ventanas de tiempo.",
+        "pl": "Naprawiono ustawienie \"splitGoTaryfa\", aby egzekwować podział taryfowy \"Go\", nawet jeśli API nie zapewnia okien czasowych.",
+        "uk": "Виправлено 'splitGoTariff' налаштування для забезпечення 'Go' розщеплення тарифу навіть якщо API не передбачено часових вікон.",
+        "zh-cn": "固定“ splitGoTariff” 设置以强制执行“ Go” 关税分割, 即使API 不提供时间窗口 ."
+      },
       "0.5.4": {
         "en": "Activate automated release workflow with Trusted Publishing and Sentry integration.",
         "de": "Aktivieren Sie automatisierten Release-Workflow mit Trusted Publishing und Sentry Integration.",
