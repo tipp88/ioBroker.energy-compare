@@ -292,6 +292,15 @@ class EnergyCompare extends utils.Adapter {
 				rates: rates,
 			};
 
+			if (this.config.splitGoTariff && masterData.rates.length === 1) {
+				const baseRate = masterData.rates[0].rateEuros;
+				masterData.rates = [
+					{ name: 'GO', rateEuros: baseRate, from: '00:00:00', to: '05:00:00' },
+					{ name: 'STANDARD', rateEuros: baseRate, from: '05:00:00', to: '24:00:00' },
+				];
+				masterData.isTimeOfUse = true;
+			}
+
 			this.masterData = masterData;
 			await this.writeMasterDataStates(masterData);
 			this.log.info('Octopus master data fetched and updated.');

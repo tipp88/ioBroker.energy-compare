@@ -118,6 +118,7 @@
 				"splitGoTariff": {
 					"type": "checkbox",
 					"label": "Split into 'Go' (0-5h) and Standard Tariff windows",
+					"help": "Default: OFF. Turn ON to forcefully split consumption into Go and Standard time windows, even if the API does not provide time windows.",
 					"newLine": true,
 					"xs": 12,
 					"sm": 12,
