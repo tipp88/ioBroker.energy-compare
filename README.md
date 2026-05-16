@@ -124,6 +124,8 @@ Once configured, the adapter handles the rest! It sets an internal Cronjob scali
 ### 0.1.0 (2026-04-23)
 * (tipp88) Initial release with 30-day API cache sweep and deep property introspection.
 
+[Older changelogs can be found there](CHANGELOG_OLD.md)
+
 ## License
 MIT License
 
